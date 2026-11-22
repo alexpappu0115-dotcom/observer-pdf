@@ -1,10 +1,14 @@
 {
   "name": "Observer PDF Studio",
   "short_name": "Observer",
-  "description": "Full local-first Acrobat alternative: view, draw, OCR, sign, combine, reorder",
+  "description": "Local-first PDF studio: view, draw, OCR, sign, combine and edit pages",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0c0d0f",
-  "theme_color": "#c6a36a",
-  "icons": []
+  "theme_color": "#141311",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
 }

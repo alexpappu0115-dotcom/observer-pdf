@@ -2,9 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Observer — PDF Studio</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Observer">
+  <meta name="theme-color" content="#141311">
   <style>
     :root {
       --ink: #141311;
@@ -28,10 +34,11 @@
     }
     header {
       background: var(--ink);
-      padding: 0.9rem 1.2rem;
+      padding: calc(0.7rem + env(safe-area-inset-top)) 1rem 0.7rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 0.5rem;
       border-bottom: 1px solid #2a2a2a;
       position: sticky;
       top: 0;
@@ -43,17 +50,21 @@
       font-weight: 700;
       color: var(--brass);
       letter-spacing: -0.3px;
+      white-space: nowrap;
     }
     .logo span { font-size: 0.7rem; color: var(--cream); margin-left: 0.4rem; font-weight: 400; opacity: 0.8; }
-    .header-actions { display: flex; gap: 0.5rem; }
+    .header-actions { display: flex; gap: 0.35rem; align-items: center; }
     .icon-btn {
       background: transparent;
       border: none;
       color: var(--brass);
       font-size: 1.2rem;
-      padding: 0.4rem;
+      padding: 0.35rem 0.5rem;
       cursor: pointer;
     }
+    #zoom-controls { display: none; align-items: center; gap: 0.1rem; }
+    #zoom-controls.show { display: flex; }
+    #zoom-label { background: transparent; color: var(--cream); font-size: 0.8rem; font-weight: 500; padding: 0.3rem 0.4rem; min-width: 52px; }
 
     /* Bottom toolbar */
     .bottom-bar {
@@ -77,6 +88,7 @@
       padding: 0.55rem 0.4rem;
       font-size: 0.78rem;
       border-radius: 8px;
+      text-align: center;
     }
 
     button, .btn {
@@ -90,9 +102,10 @@
       cursor: pointer;
       border-radius: 8px;
     }
-    button.secondary { background: var(--elev); color: var(--text); }
+    button.secondary, .btn.secondary { background: var(--elev); color: var(--text); }
     button.danger { background: var(--clay); color: white; }
-    button:disabled { opacity: 0.45; }
+    button.active { background: var(--clay); color: white; }
+    button:disabled, button.locked { opacity: 0.45; }
 
     #dropzone {
       border: 2px dashed var(--brass);
@@ -103,32 +116,89 @@
       background: rgba(198,163,106,0.05);
       cursor: pointer;
       transition: background 0.2s;
+      display: block;
     }
     #dropzone:active { background: rgba(198,163,106,0.12); }
     #dropzone h2 { font-size: 1.3rem; margin-bottom: 0.4rem; color: var(--cream); }
     #dropzone p { color: #aaa; font-size: 0.95rem; }
 
-    #workspace { display: none; flex: 1; flex-direction: column; padding-bottom: 80px; }
+    #workspace { display: none; flex: 1; flex-direction: column; padding-bottom: 120px; }
     #viewer-wrap {
       flex: 1;
       overflow: auto;
-      display: flex;
-      justify-content: center;
       background: #0a0a0a;
-      padding: 1rem 0.5rem;
-      position: relative;
+      padding: 1rem 8px;
     }
-    #pdf-canvas { max-width: 100%; height: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.7); background: white; border-radius: 2px; }
+    #page-stack {
+      position: relative;
+      margin: 0 auto;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+      background: white;
+    }
+    #pdf-canvas { display: block; }
     #draw-canvas {
       position: absolute;
+      left: 0;
+      top: 0;
       pointer-events: none;
-      touch-action: none;
     }
-    #draw-canvas.active { pointer-events: auto; cursor: crosshair; }
+    #draw-canvas.active { pointer-events: auto; cursor: crosshair; touch-action: none; }
+    #sig-overlay {
+      position: absolute;
+      display: none;
+      border: 1.5px dashed var(--clay);
+      background: rgba(198,163,106,0.10);
+      touch-action: none;
+      cursor: move;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .lock-banner {
+      display: none;
+      background: #2a2116;
+      color: var(--cream);
+      border-bottom: 1px solid var(--brass);
+      padding: 0.6rem 1rem;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      align-items: center;
+      gap: 0.6rem;
+      justify-content: space-between;
+    }
+    .lock-banner.show { display: flex; }
+    .lock-banner.flash { animation: flash 0.6s ease 2; }
+    @keyframes flash { 50% { background: #4a3720; } }
+    .lock-banner button { flex-shrink: 0; font-size: 0.75rem; padding: 0.4rem 0.6rem; }
+
+    .float-bar {
+      position: fixed;
+      top: calc(64px + env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel);
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 0.45rem;
+      display: none;
+      gap: 0.35rem;
+      align-items: center;
+      z-index: 95;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+      max-width: 96vw;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .float-bar.show { display: flex; }
+    .float-bar button { font-size: 0.78rem; padding: 0.45rem 0.7rem; }
+    .float-bar .hint { font-size: 0.75rem; color: #aaa; padding: 0 0.3rem; }
+    .swatch { width: 28px; height: 28px; border-radius: 50%; padding: 0; border: 2px solid transparent; }
+    .swatch.selected { border-color: var(--cream); }
 
     .status-toast {
       position: fixed;
-      bottom: 90px;
+      bottom: 120px;
       left: 50%;
       transform: translateX(-50%);
       background: var(--panel);
@@ -144,7 +214,7 @@
     }
     .ocr-panel {
       background: var(--panel);
-      margin: 0.5rem 1rem 80px;
+      margin: 0.5rem 1rem 0;
       padding: 0.9rem;
       border-radius: 10px;
       font-size: 0.88rem;
@@ -170,13 +240,15 @@
       width: 100%;
       max-width: 520px;
       border-radius: 20px 20px 0 0;
-      padding: 1.4rem 1.2rem 1.8rem;
+      padding: 1.4rem 1.2rem calc(1.8rem + env(safe-area-inset-bottom));
       border-top: 2px solid var(--brass);
       max-height: 85vh;
       overflow: auto;
     }
     .modal h3 { color: var(--brass); margin-bottom: 1rem; font-size: 1.15rem; }
-    canvas#sig-pad { background: #fff; border-radius: 8px; width: 100%; height: 150px; touch-action: none; margin: 0.5rem 0; }
+    .modal h4 { color: var(--cream); margin: 1.2rem 0 0.4rem; font-size: 0.95rem; }
+    .modal .note { font-size: 0.8rem; color: #999; line-height: 1.4; margin: 0.5rem 0; }
+    canvas#sig-pad { background: #fff; border-radius: 8px; width: 100%; height: 150px; touch-action: none; margin: 0.5rem 0; display: block; }
     input, select {
       background: var(--elev);
       color: white;
@@ -189,21 +261,31 @@
     }
     .settings-row { margin-bottom: 1rem; }
     .settings-row label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 0.25rem; }
-    .page-info { font-size: 0.85rem; color: var(--brass); min-width: 50px; text-align: center; }
+    .row-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .row-buttons > * { flex: 1 1 auto; text-align: center; }
+    .page-info { font-size: 0.85rem; color: var(--brass); min-width: 50px; text-align: center; align-self: center; }
+    #id-status { font-size: 0.85rem; color: var(--cream); background: var(--panel); border-radius: 8px; padding: 0.6rem; line-height: 1.4; }
+    #file-list { font-size: 0.82rem; color: #bbb; margin: 0.6rem 0; line-height: 1.5; }
 
-    input[type="file"] { position: absolute; left: -9999px; }
+    input[type="file"] { position: absolute; left: -9999px; width: 1px; }
   </style>
 </head>
 <body>
   <header>
     <div class="logo">Observer <span>PDF</span></div>
     <div class="header-actions">
-      <button class="icon-btn" id="settings-btn" title="Settings">⚙</button>
+      <div id="zoom-controls">
+        <button class="icon-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+        <button id="zoom-label" title="Fit to width">100%</button>
+        <button class="icon-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+      </div>
+      <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
     </div>
   </header>
 
-  <input type="file" id="file-input" accept="application/pdf">
-  <input type="file" id="multi-input" accept="application/pdf" multiple>
+  <input type="file" id="file-input" accept="application/pdf,.pdf">
+  <input type="file" id="multi-input" accept="application/pdf,.pdf" multiple>
+  <input type="file" id="p12-input" accept=".p12,.pfx,application/x-pkcs12">
 
   <label id="dropzone" for="file-input">
     <h2>Open a PDF</h2>
@@ -212,21 +294,46 @@
   </label>
 
   <div id="workspace">
+    <div id="lock-banner" class="lock-banner">
+      <span>🔒 This PDF is digitally signed. Editing it would invalidate the signature. You can still add another digital signature.</span>
+      <button class="secondary" id="unlock-btn">Edit anyway</button>
+    </div>
     <div id="viewer-wrap">
-      <canvas id="pdf-canvas"></canvas>
-      <canvas id="draw-canvas"></canvas>
+      <div id="page-stack">
+        <canvas id="pdf-canvas"></canvas>
+        <canvas id="draw-canvas"></canvas>
+        <img id="sig-overlay" alt="Signature placement" draggable="false">
+      </div>
     </div>
     <div id="ocr-output" class="ocr-panel"></div>
   </div>
 
-  <div id="status" class="status-toast"></div>
+  <!-- Drawing toolbar -->
+  <div id="draw-bar" class="float-bar">
+    <button class="swatch selected" data-color="#141311" style="background:#141311" aria-label="Black pen"></button>
+    <button class="swatch" data-color="#1f4fbf" style="background:#1f4fbf" aria-label="Blue pen"></button>
+    <button class="swatch" data-color="#b55245" style="background:#b55245" aria-label="Red pen"></button>
+    <button class="secondary" id="undo-ink">Undo</button>
+    <button id="done-ink">Done</button>
+  </div>
+
+  <!-- Signature placement toolbar -->
+  <div id="place-bar" class="float-bar">
+    <span class="hint">Drag to position</span>
+    <button class="secondary" id="sig-smaller" aria-label="Smaller">−</button>
+    <button class="secondary" id="sig-larger" aria-label="Larger">+</button>
+    <button class="secondary" id="place-cancel">Cancel</button>
+    <button id="place-apply">Apply</button>
+  </div>
+
+  <div id="status" class="status-toast" role="status"></div>
 
   <div class="bottom-bar" id="bottom-bar">
     <label for="file-input" class="btn secondary">Open</label>
     <label for="multi-input" class="btn secondary">Add</label>
-    <button class="secondary" id="prev">◀</button>
+    <button class="secondary" id="prev" aria-label="Previous page">◀</button>
     <span class="page-info" id="page-info">1 / 1</span>
-    <button class="secondary" id="next">▶</button>
+    <button class="secondary" id="next" aria-label="Next page">▶</button>
     <button class="secondary" id="ocr-btn">OCR</button>
     <button class="secondary" id="draw-btn">Draw</button>
     <button class="secondary" id="sign-btn">Sign</button>
@@ -238,14 +345,16 @@
   <div id="sig-modal" class="modal-overlay">
     <div class="modal">
       <h3>Signature</h3>
-      <canvas id="sig-pad" width="400" height="150"></canvas>
-      <input type="text" id="signer-name" placeholder="Your name">
-      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+      <canvas id="sig-pad"></canvas>
+      <input type="text" id="signer-name" placeholder="Your name" autocomplete="name">
+      <div class="row-buttons">
         <button id="clear-sig" class="secondary">Clear</button>
-        <button id="apply-visual">Place Visual</button>
-        <button id="apply-cert">Certified Sign</button>
-        <button class="secondary" onclick="closeModal('sig-modal')">Cancel</button>
+        <button id="apply-visual">Place signature</button>
+        <button id="apply-cert">Digitally sign</button>
+        <button class="secondary" data-close="sig-modal">Cancel</button>
       </div>
+      <p class="note"><b>Place signature</b> stamps your drawn signature where you choose on the page.<br>
+        <b>Digitally sign</b> adds a tamper-evident certificate signature using your Digital ID (see Settings). Do it last, because any later edit invalidates it.</p>
     </div>
   </div>
 
@@ -256,8 +365,9 @@
       <button class="secondary" style="width:100%; margin:0.4rem 0;" id="rotate-btn">Rotate Page 90°</button>
       <button class="secondary" style="width:100%; margin:0.4rem 0;" id="delete-page-btn">Delete Page</button>
       <button class="secondary" style="width:100%; margin:0.4rem 0;" id="combine-btn">Combine Loaded PDFs</button>
-      <p style="font-size:0.8rem; color:#888; margin:0.8rem 0;">Use Open/Add to load multiple files first.</p>
-      <button class="secondary" style="width:100%;" onclick="closeModal('tools-modal')">Close</button>
+      <div id="file-list"></div>
+      <p class="note">Use Add to load more PDFs. Combine appends them after the current document, including your edits.</p>
+      <button class="secondary" style="width:100%;" data-close="tools-modal">Close</button>
     </div>
   </div>
 
@@ -266,11 +376,11 @@
     <div class="modal">
       <h3>Settings</h3>
       <div class="settings-row">
-        <label>Default signer name</label>
-        <input type="text" id="default-name" placeholder="Your name">
+        <label for="default-name">Default signer name</label>
+        <input type="text" id="default-name" placeholder="Your name" autocomplete="name">
       </div>
       <div class="settings-row">
-        <label>OCR language</label>
+        <label for="ocr-lang">OCR language</label>
         <select id="ocr-lang">
           <option value="eng">English</option>
           <option value="spa">Spanish</option>
@@ -278,285 +388,659 @@
           <option value="deu">German</option>
         </select>
       </div>
-      <div class="settings-row">
-        <p style="font-size:0.85rem; color:#aaa; line-height:1.4;">All processing happens on this device. Nothing is uploaded. Saved files go to your Files app.</p>
+
+      <h4>Digital ID</h4>
+      <div id="id-status"></div>
+      <p class="note">Without an imported certificate, Observer creates a self-signed Digital ID per name and keeps it on this device, so all your signatures share one identity. Acrobat will show it as "identity unknown" until the recipient trusts it. Import a certificate from a trusted provider (.p12 / .pfx) to get signatures Acrobat validates automatically.</p>
+      <label for="p12-pwd" style="font-size:0.85rem; color:#aaa;">Certificate password (for import / backup)</label>
+      <input type="password" id="p12-pwd" autocomplete="off">
+      <div class="row-buttons">
+        <label for="p12-input" class="btn secondary">Import .p12</label>
+        <button class="secondary" id="export-id">Back up ID</button>
+        <button class="secondary" id="remove-id">Remove imported</button>
       </div>
-      <button class="secondary" style="width:100%;" onclick="closeModal('settings-modal')">Done</button>
+
+      <div class="settings-row" style="margin-top:1rem;">
+        <p class="note">All processing happens on this device. Nothing is uploaded. OCR downloads its engine and language data the first time you use it.</p>
+      </div>
+      <button class="secondary" style="width:100%;" data-close="settings-modal">Done</button>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://unpkg.com/tesseract.js@v5.0.4/dist/tesseract.min.js"></script>
-  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="https://unpkg.com/node-forge@1.3.1/dist/forge.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/zgapdfsigner/dist/zgapdfsigner.min.js"></script>
+  <script src="vendor/pdf.min.js"></script>
+  <script src="vendor/pdf-lib.min.js"></script>
+  <script src="vendor/forge.min.js"></script>
+  <script src="vendor/zgapdfsigner.min.js"></script>
 
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+    const { PDFDocument, rgb, degrees, LineCapStyle } = PDFLib;
 
-    let pdfDoc = null, currentPage = 1, totalPages = 0, pdfBytes = null, originalName = 'document.pdf';
-    let loadedPdfs = [];
-    let drawingMode = false;
-    let isDrawing = false, lastX = 0, lastY = 0;
+    const PEN_WIDTH = 1.6; // PDF points
+
+    // ---------- State ----------
+    let pdfDoc = null;          // pdf.js document (for viewing)
+    let pdfBytes = null;        // Uint8Array, the source of truth
+    let originalName = 'document.pdf';
+    let currentPage = 1, totalPages = 0;
+    let extraPdfs = [];         // files added for Combine [{name, bytes}]
+    let zoom = 1;               // multiplier on fit-to-width
+    let viewport = null;        // current pdf.js viewport (CSS px)
+    let renderTask = null, renderSeq = 0;
+    let ink = {};               // page number -> [{color, w, pts:[[x,y] in PDF space]}]
+    let drawingMode = false, currentStroke = null, penColor = '#141311';
+    let placement = null;       // {url, aspect, x, y, w, h} in CSS px of the page
+    let signed = false;         // document has a digital signature -> edits locked
     let ocrLang = 'eng';
+    let busy = false;
 
-    const fileInput = document.getElementById('file-input');
-    const multiInput = document.getElementById('multi-input');
-    const dropzone = document.getElementById('dropzone');
-    const workspace = document.getElementById('workspace');
-    const bottomBar = document.getElementById('bottom-bar');
-    const canvas = document.getElementById('pdf-canvas');
-    const ctx = canvas.getContext('2d');
-    const drawCanvas = document.getElementById('draw-canvas');
-    const drawCtx = drawCanvas.getContext('2d');
-    const statusEl = document.getElementById('status');
-    const ocrOut = document.getElementById('ocr-output');
-    const pageInfo = document.getElementById('page-info');
+    const $ = id => document.getElementById(id);
+    const fileInput = $('file-input'), multiInput = $('multi-input');
+    const dropzone = $('dropzone'), workspace = $('workspace'), bottomBar = $('bottom-bar');
+    const wrap = $('viewer-wrap'), stack = $('page-stack');
+    const canvas = $('pdf-canvas'), ctx = canvas.getContext('2d');
+    const drawCanvas = $('draw-canvas'), drawCtx = drawCanvas.getContext('2d');
+    const sigOverlay = $('sig-overlay');
+    const statusEl = $('status'), ocrOut = $('ocr-output'), pageInfo = $('page-info');
 
-    // Load settings
-    const savedName = localStorage.getItem('observer-name');
-    if (savedName) document.getElementById('default-name').value = savedName;
-    const savedLang = localStorage.getItem('observer-ocr');
-    if (savedLang) { document.getElementById('ocr-lang').value = savedLang; ocrLang = savedLang; }
-
-    document.getElementById('default-name').onchange = e => localStorage.setItem('observer-name', e.target.value);
-    document.getElementById('ocr-lang').onchange = e => {
-      ocrLang = e.target.value;
-      localStorage.setItem('observer-ocr', ocrLang);
+    // ---------- Settings ----------
+    const store = {
+      get(k, d = null) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+      del(k) { try { localStorage.removeItem(k); } catch {} }
     };
+    const savedName = store.get('observer-name');
+    if (savedName) $('default-name').value = savedName;
+    const savedLang = store.get('observer-ocr');
+    if (savedLang) { $('ocr-lang').value = savedLang; ocrLang = savedLang; }
+    $('default-name').oninput = e => { store.set('observer-name', e.target.value); renderIdStatus(); };
+    $('ocr-lang').onchange = e => { ocrLang = e.target.value; store.set('observer-ocr', ocrLang); };
 
+    // ---------- UI helpers ----------
     function setStatus(msg, timeout = 2500) {
       statusEl.textContent = msg;
       statusEl.style.display = 'block';
       clearTimeout(statusEl._t);
-      statusEl._t = setTimeout(() => statusEl.style.display = 'none', timeout);
+      if (timeout) statusEl._t = setTimeout(() => statusEl.style.display = 'none', timeout);
     }
-    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { $(id).classList.remove('show'); }
+    function openModal(id) { $(id).classList.add('show'); }
+    document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
+    document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); }));
+    const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
+    const toU8 = b => b instanceof Uint8Array ? b : new Uint8Array(b);
 
-    document.getElementById('settings-btn').onclick = () => openModal('settings-modal');
+    async function run(label, fn) {
+      if (busy) return;
+      busy = true;
+      try { return await fn(); }
+      catch (e) { console.error(e); setStatus(`${label} error: ${e.message || e}`, 5000); }
+      finally { busy = false; }
+    }
 
-    fileInput.onchange = e => loadPdf(e.target.files[0], true);
-    multiInput.onchange = e => { for (let f of e.target.files) loadPdf(f, false); };
+    function hasSignature(u8) {
+      const s = new TextDecoder('latin1').decode(u8);
+      return /\/ByteRange\s*\[/.test(s);
+    }
+    function updateLock() {
+      $('lock-banner').classList.toggle('show', signed);
+      ['draw-btn', 'rotate-btn', 'delete-page-btn', 'combine-btn', 'apply-visual'].forEach(id => $(id).classList.toggle('locked', signed));
+    }
+    function lockedNotice() {
+      const b = $('lock-banner');
+      b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash');
+      setStatus('Locked: this PDF is digitally signed. Tap "Edit anyway" to unlock.', 4000);
+    }
+    $('unlock-btn').onclick = () => { signed = false; updateLock(); setStatus('Unlocked. Saving edits will invalidate the existing signature.', 4000); };
+
+    // ---------- Opening files ----------
+    $('settings-btn').onclick = () => { renderIdStatus(); openModal('settings-modal'); };
+    const isPdf = f => f && (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name));
+
+    fileInput.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await openFile(f); };
+    multiInput.onchange = async e => {
+      const files = [...e.target.files].filter(isPdf); e.target.value = '';
+      if (!files.length) return;
+      let start = 0;
+      if (!pdfDoc) { await openFile(files[0]); start = 1; }
+      for (const f of files.slice(start)) extraPdfs.push({ name: f.name, bytes: toU8(await f.arrayBuffer()) });
+      if (files.length > start) setStatus(`Added ${files.length - start} file(s) for Combine (Pages menu)`, 3500);
+    };
     dropzone.ondragover = e => { e.preventDefault(); dropzone.style.background = 'rgba(198,163,106,0.15)'; };
     dropzone.ondragleave = () => dropzone.style.background = '';
-    dropzone.ondrop = e => { e.preventDefault(); dropzone.style.background = ''; if (e.dataTransfer.files[0]) loadPdf(e.dataTransfer.files[0], true); };
+    dropzone.ondrop = e => { e.preventDefault(); dropzone.style.background = ''; if (e.dataTransfer.files[0]) openFile(e.dataTransfer.files[0]); };
 
-    async function loadPdf(file, replace = true) {
-      if (!file || !file.type.includes('pdf')) return;
-      const bytes = await file.arrayBuffer();
-      if (replace) {
-        loadedPdfs = [{ name: file.name, bytes }];
+    async function openFile(file) {
+      if (!isPdf(file)) { setStatus('That file is not a PDF'); return; }
+      await run('Load', async () => {
+        setStatus('Loading…', 0);
+        const bytes = toU8(await file.arrayBuffer());
+        // Validate before replacing the current document
+        const test = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
+        test.destroy();
         pdfBytes = bytes;
         originalName = file.name;
-      } else {
-        loadedPdfs.push({ name: file.name, bytes });
-        setStatus(`Added ${file.name}`);
-        return;
-      }
-      setStatus('Loading…');
-      try {
-        pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
-        totalPages = pdfDoc.numPages;
+        extraPdfs = [];
+        ink = {};
         currentPage = 1;
+        zoom = 1;
+        signed = hasSignature(pdfBytes);
+        updateLock();
+        endPlacement();
+        setDrawing(false);
+        ocrOut.style.display = 'none';
         dropzone.style.display = 'none';
         workspace.style.display = 'flex';
         bottomBar.classList.add('show');
-        await renderPage(currentPage);
-        setStatus(`Loaded ${originalName}`);
-      } catch (err) { setStatus('Load error: ' + err.message); }
+        $('zoom-controls').classList.add('show');
+        await reloadView();
+        setStatus(`Loaded ${originalName}${signed ? ' (digitally signed)' : ''}`);
+      });
     }
 
-    async function renderPage(num) {
-      const page = await pdfDoc.getPage(num);
-      const viewport = page.getViewport({ scale: Math.min(1.8, (window.innerWidth - 24) / 600) });
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      drawCanvas.width = viewport.width;
-      drawCanvas.height = viewport.height;
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      pageInfo.textContent = `${num} / ${totalPages}`;
-      drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    // ---------- Rendering ----------
+    async function reloadView() {
+      const doc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
+      if (renderTask) { renderTask.cancel(); renderTask = null; }
+      const old = pdfDoc;
+      pdfDoc = doc;
+      if (old) old.destroy();
+      totalPages = doc.numPages;
+      currentPage = Math.min(Math.max(1, currentPage), totalPages);
+      await renderPage();
     }
 
-    document.getElementById('prev').onclick = async () => { if (currentPage > 1) { currentPage--; await renderPage(currentPage); } };
-    document.getElementById('next').onclick = async () => { if (currentPage < totalPages) { currentPage++; await renderPage(currentPage); } };
+    async function renderPage() {
+      if (!pdfDoc) return;
+      const seq = ++renderSeq;
+      const page = await pdfDoc.getPage(currentPage);
+      if (seq !== renderSeq) return;
+      const base = page.getViewport({ scale: 1 });
+      const avail = Math.max(200, wrap.clientWidth - 16);
+      const fit = Math.min(avail / base.width, 2);
+      viewport = page.getViewport({ scale: fit * zoom });
 
-    document.getElementById('ocr-btn').onclick = async () => {
+      let dpr = window.devicePixelRatio || 1;
+      const MAX_PX = 16e6; // iOS canvas memory limit
+      if (viewport.width * viewport.height * dpr * dpr > MAX_PX) dpr = Math.sqrt(MAX_PX / (viewport.width * viewport.height));
+
+      if (renderTask) { renderTask.cancel(); renderTask = null; }
+      const w = viewport.width, h = viewport.height;
+      for (const c of [canvas, drawCanvas]) {
+        c.width = Math.floor(w * dpr); c.height = Math.floor(h * dpr);
+        c.style.width = w + 'px'; c.style.height = h + 'px';
+      }
+      drawCanvas._dpr = dpr;
+      stack.style.width = w + 'px'; stack.style.height = h + 'px';
+
+      const task = page.render({ canvasContext: ctx, viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null });
+      renderTask = task;
+      try { await task.promise; }
+      catch (e) { if (e && e.name === 'RenderingCancelledException') return; throw e; }
+      if (renderTask === task) renderTask = null;
+
+      pageInfo.textContent = `${currentPage} / ${totalPages}`;
+      $('zoom-label').textContent = Math.round(viewport.scale * 100 / (96 / 72)) + '%';
+      redrawInk();
+      if (placement) positionOverlay();
+    }
+
+    $('prev').onclick = () => { if (currentPage > 1) { currentPage--; renderPage(); } };
+    $('next').onclick = () => { if (currentPage < totalPages) { currentPage++; renderPage(); } };
+    document.addEventListener('keydown', e => {
+      if (!pdfDoc || e.target.matches('input, select, textarea')) return;
+      if (e.key === 'ArrowLeft') $('prev').click();
+      if (e.key === 'ArrowRight') $('next').click();
+    });
+    const setZoom = z => { zoom = Math.min(4, Math.max(0.5, z)); renderPage(); };
+    $('zoom-in').onclick = () => setZoom(zoom * 1.25);
+    $('zoom-out').onclick = () => setZoom(zoom / 1.25);
+    $('zoom-label').onclick = () => setZoom(1);
+    let resizeT;
+    window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(renderPage, 200); });
+
+    // ---------- Drawing (ink) ----------
+    function setDrawing(on) {
+      drawingMode = on;
+      drawCanvas.classList.toggle('active', on);
+      $('draw-btn').classList.toggle('active', on);
+      $('draw-btn').textContent = on ? 'Drawing' : 'Draw';
+      $('draw-bar').classList.toggle('show', on);
+    }
+    $('draw-btn').onclick = () => {
+      if (!drawingMode && signed) { lockedNotice(); return; }
+      if (!drawingMode) endPlacement();
+      setDrawing(!drawingMode);
+    };
+    $('done-ink').onclick = () => setDrawing(false);
+    $('undo-ink').onclick = () => { const s = ink[currentPage]; if (s && s.length) { s.pop(); redrawInk(); } };
+    document.querySelectorAll('.swatch').forEach(b => b.onclick = () => {
+      penColor = b.dataset.color;
+      document.querySelectorAll('.swatch').forEach(x => x.classList.toggle('selected', x === b));
+    });
+
+    const hasInk = () => Object.values(ink).some(a => a.length);
+    const cssPos = (e, el) => { const r = el.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+
+    function strokeStyle(s) {
+      drawCtx.strokeStyle = s.color;
+      drawCtx.lineWidth = s.w * viewport.scale;
+      drawCtx.lineCap = 'round';
+      drawCtx.lineJoin = 'round';
+    }
+    function redrawInk() {
+      if (!viewport) return;
+      const dpr = drawCanvas._dpr || 1;
+      drawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawCtx.clearRect(0, 0, viewport.width, viewport.height);
+      for (const s of (ink[currentPage] || [])) {
+        strokeStyle(s);
+        drawCtx.beginPath();
+        s.pts.forEach(([x, y], i) => {
+          const [vx, vy] = viewport.convertToViewportPoint(x, y);
+          if (i) drawCtx.lineTo(vx, vy); else drawCtx.moveTo(vx, vy);
+        });
+        if (s.pts.length === 1) { const [vx, vy] = viewport.convertToViewportPoint(...s.pts[0]); drawCtx.lineTo(vx + 0.01, vy); }
+        drawCtx.stroke();
+      }
+    }
+    drawCanvas.addEventListener('pointerdown', e => {
+      if (!drawingMode) return;
+      e.preventDefault();
+      drawCanvas.setPointerCapture(e.pointerId);
+      const [x, y] = cssPos(e, drawCanvas);
+      currentStroke = { color: penColor, w: PEN_WIDTH, pts: [viewport.convertToPdfPoint(x, y)], last: [x, y] };
+      (ink[currentPage] = ink[currentPage] || []).push(currentStroke);
+      redrawInk();
+    });
+    drawCanvas.addEventListener('pointermove', e => {
+      if (!currentStroke) return;
+      e.preventDefault();
+      const [x, y] = cssPos(e, drawCanvas);
+      currentStroke.pts.push(viewport.convertToPdfPoint(x, y));
+      strokeStyle(currentStroke);
+      drawCtx.beginPath();
+      drawCtx.moveTo(...currentStroke.last);
+      drawCtx.lineTo(x, y);
+      drawCtx.stroke();
+      currentStroke.last = [x, y];
+    });
+    const endStroke = () => { if (currentStroke) { delete currentStroke.last; currentStroke = null; } };
+    drawCanvas.addEventListener('pointerup', endStroke);
+    drawCanvas.addEventListener('pointercancel', endStroke);
+
+    function hexToRgb(h) {
+      const n = parseInt(h.slice(1), 16);
+      return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+    }
+    // Write strokes into the PDF as vector lines
+    function applyInk(doc, inkMap) {
+      for (const [p, strokes] of Object.entries(inkMap)) {
+        const page = doc.getPage(+p - 1);
+        for (const s of strokes) {
+          const color = hexToRgb(s.color);
+          const pts = s.pts.length === 1 ? [s.pts[0], [s.pts[0][0] + 0.01, s.pts[0][1]]] : s.pts;
+          for (let i = 1; i < pts.length; i++) {
+            page.drawLine({
+              start: { x: pts[i - 1][0], y: pts[i - 1][1] },
+              end: { x: pts[i][0], y: pts[i][1] },
+              thickness: s.w, color, lineCap: LineCapStyle.Round
+            });
+          }
+        }
+      }
+    }
+
+    // Every structural edit goes through here: pending ink is written first, then fn runs.
+    async function editPdf(fn) {
+      if (signed) { lockedNotice(); return false; }
+      const doc = await PDFDocument.load(pdfBytes);
+      const pending = ink;
+      applyInk(doc, pending);
+      if (fn) await fn(doc);
+      pdfBytes = await doc.save();
+      if (ink === pending) ink = {};
+      await reloadView();
+      return true;
+    }
+
+    // ---------- Visual signature ----------
+    $('sign-btn').onclick = () => {
+      setDrawing(false);
+      const def = $('default-name').value;
+      if (def && !$('signer-name').value) $('signer-name').value = def;
+      openModal('sig-modal');
+      sizeSigPad();
+    };
+    const sigPad = $('sig-pad'), sigCtx = sigPad.getContext('2d');
+    let sigDrawing = false, sigDirty = false;
+    function sizeSigPad() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = sigPad.clientWidth || 400, h = sigPad.clientHeight || 150;
+      if (sigPad.width === Math.round(w * dpr) && sigPad.height === Math.round(h * dpr)) return;
+      sigPad.width = Math.round(w * dpr); sigPad.height = Math.round(h * dpr);
+      sigCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sigDirty = false;
+      const saved = store.get('observer-sig');
+      if (saved) {
+        const img = new Image();
+        img.onload = () => {
+          const s = Math.min((w - 20) / img.width, (h - 20) / img.height, 1);
+          sigCtx.drawImage(img, (w - img.width * s) / 2, (h - img.height * s) / 2, img.width * s, img.height * s);
+          sigDirty = true;
+        };
+        img.src = saved;
+      }
+    }
+    sigPad.addEventListener('pointerdown', e => {
+      e.preventDefault(); sigPad.setPointerCapture(e.pointerId); sigDrawing = true;
+      const [x, y] = cssPos(e, sigPad); sigCtx.beginPath(); sigCtx.moveTo(x, y);
+    });
+    sigPad.addEventListener('pointermove', e => {
+      if (!sigDrawing) return; e.preventDefault();
+      const [x, y] = cssPos(e, sigPad);
+      sigCtx.lineTo(x, y); sigCtx.strokeStyle = '#141311'; sigCtx.lineWidth = 2.4; sigCtx.lineCap = 'round'; sigCtx.lineJoin = 'round'; sigCtx.stroke();
+      sigDirty = true;
+    });
+    sigPad.addEventListener('pointerup', () => sigDrawing = false);
+    sigPad.addEventListener('pointercancel', () => sigDrawing = false);
+    $('clear-sig').onclick = () => { sigCtx.save(); sigCtx.setTransform(1, 0, 0, 1, 0, 0); sigCtx.clearRect(0, 0, sigPad.width, sigPad.height); sigCtx.restore(); sigDirty = false; store.del('observer-sig'); };
+
+    // Crop the pad to the inked area; returns null if empty
+    function croppedSignature() {
+      const { width, height } = sigPad;
+      const data = sigCtx.getImageData(0, 0, width, height).data;
+      let minX = width, minY = height, maxX = -1, maxY = -1;
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+        if (data[(y * width + x) * 4 + 3] > 10) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+      }
+      if (maxX < 0) return null;
+      const pad = 6;
+      minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+      maxX = Math.min(width - 1, maxX + pad); maxY = Math.min(height - 1, maxY + pad);
+      const c = document.createElement('canvas');
+      c.width = maxX - minX + 1; c.height = maxY - minY + 1;
+      c.getContext('2d').drawImage(sigPad, minX, minY, c.width, c.height, 0, 0, c.width, c.height);
+      return { url: c.toDataURL('image/png'), aspect: c.width / c.height };
+    }
+
+    $('apply-visual').onclick = () => {
+      if (signed) { closeModal('sig-modal'); lockedNotice(); return; }
+      const sig = croppedSignature();
+      if (!sig) { setStatus('Draw your signature first'); return; }
+      store.set('observer-sig', sig.url);
+      closeModal('sig-modal');
+      startPlacement(sig);
+    };
+
+    function startPlacement(sig) {
+      const w = Math.min(viewport.width * 0.4, 220), h = w / sig.aspect;
+      placement = { ...sig, w, h, x: viewport.width - w - 24, y: viewport.height - h - 40 };
+      sigOverlay.src = sig.url;
+      sigOverlay.style.display = 'block';
+      $('place-bar').classList.add('show');
+      positionOverlay();
+      setStatus('Drag the signature into place, then tap Apply. You can change pages first.', 4000);
+    }
+    function endPlacement() {
+      placement = null;
+      sigOverlay.style.display = 'none';
+      $('place-bar').classList.remove('show');
+    }
+    function positionOverlay() {
+      const p = placement;
+      p.w = Math.min(p.w, viewport.width); p.h = p.w / p.aspect;
+      p.x = Math.min(Math.max(0, p.x), viewport.width - p.w);
+      p.y = Math.min(Math.max(0, p.y), viewport.height - p.h);
+      Object.assign(sigOverlay.style, { left: p.x + 'px', top: p.y + 'px', width: p.w + 'px', height: p.h + 'px' });
+    }
+    let dragFrom = null;
+    sigOverlay.addEventListener('pointerdown', e => {
+      e.preventDefault(); sigOverlay.setPointerCapture(e.pointerId);
+      dragFrom = { cx: e.clientX, cy: e.clientY, x: placement.x, y: placement.y };
+    });
+    sigOverlay.addEventListener('pointermove', e => {
+      if (!dragFrom) return; e.preventDefault();
+      placement.x = dragFrom.x + (e.clientX - dragFrom.cx);
+      placement.y = dragFrom.y + (e.clientY - dragFrom.cy);
+      positionOverlay();
+    });
+    sigOverlay.addEventListener('pointerup', () => dragFrom = null);
+    sigOverlay.addEventListener('pointercancel', () => dragFrom = null);
+    function resizeSig(f) {
+      const p = placement, cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+      p.w = Math.max(30, p.w * f); p.h = p.w / p.aspect;
+      p.x = cx - p.w / 2; p.y = cy - p.h / 2;
+      positionOverlay();
+    }
+    $('sig-larger').onclick = () => resizeSig(1.15);
+    $('sig-smaller').onclick = () => resizeSig(1 / 1.15);
+    $('place-cancel').onclick = endPlacement;
+    $('place-apply').onclick = () => run('Signature', async () => {
+      const { x, y, w, h, url } = placement;
+      const s = viewport.scale;
+      // Bottom-left and bottom-right of the box in PDF space; the angle handles rotated pages
+      const p0 = viewport.convertToPdfPoint(x, y + h);
+      const p1 = viewport.convertToPdfPoint(x + w, y + h);
+      const angle = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]) * 180 / Math.PI;
+      const pageIndex = currentPage - 1;
+      const ok = await editPdf(async doc => {
+        const img = await doc.embedPng(url);
+        doc.getPage(pageIndex).drawImage(img, { x: p0[0], y: p0[1], width: w / s, height: h / s, rotate: degrees(angle) });
+      });
+      if (ok) { endPlacement(); setStatus('Signature placed'); }
+    });
+
+    // ---------- Digital ID & certified signature ----------
+    const b64ToU8 = b64 => { const bin = forge.util.decode64(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+    const u8ToBin = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return s; };
+    const getIds = () => { try { return JSON.parse(store.get('observer-ids', '{}')); } catch { return {}; } };
+
+    function parseP12(u8, pwd) {
+      const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(u8ToBin(u8)), pwd);
+      const certBag = (p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag] || [])[0];
+      const keyBag = (p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[forge.pki.oids.pkcs8ShroudedKeyBag] || [])[0]
+        || (p12.getBags({ bagType: forge.pki.oids.keyBag })[forge.pki.oids.keyBag] || [])[0];
+      if (!certBag || !keyBag) throw new Error('Certificate file has no certificate or private key');
+      const cert = certBag.cert;
+      const field = (attrs, n) => (attrs.getField(n) || {}).value || '';
+      return { cert, key: keyBag.key, cn: field(cert.subject, 'CN'), issuer: field(cert.issuer, 'CN') || field(cert.issuer, 'O') };
+    }
+    function p12ToB64(key, cert, pwd) {
+      const asn1 = forge.pkcs12.toPkcs12Asn1(key, [cert], pwd, { algorithm: '3des' });
+      return forge.util.encode64(forge.asn1.toDer(asn1).getBytes());
+    }
+    function createIdentity(name) {
+      const keys = forge.pki.rsa.generateKeyPair(2048);
+      const cert = forge.pki.createCertificate();
+      cert.publicKey = keys.publicKey;
+      cert.serialNumber = '01' + forge.util.bytesToHex(forge.random.getBytesSync(15));
+      cert.validity.notBefore = new Date();
+      cert.validity.notAfter = new Date();
+      cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 10);
+      const attrs = [{ name: 'commonName', value: name }, { name: 'organizationName', value: 'Observer (self-signed)' }];
+      cert.setSubject(attrs);
+      cert.setIssuer(attrs);
+      cert.setExtensions([
+        { name: 'basicConstraints', cA: false },
+        { name: 'keyUsage', digitalSignature: true, nonRepudiation: true },
+        { name: 'subjectKeyIdentifier' }
+      ]);
+      cert.sign(keys.privateKey, forge.md.sha256.create());
+      const pwd = forge.util.bytesToHex(forge.random.getBytesSync(16));
+      return { p12: p12ToB64(keys.privateKey, cert, pwd), pwd, created: Date.now() };
+    }
+    async function getSigningId(name) {
+      const imp = store.get('observer-p12-imported');
+      if (imp) return { p12: b64ToU8(imp), pwd: store.get('observer-p12-imported-pwd', ''), cn: store.get('observer-p12-imported-cn', name) };
+      const ids = getIds();
+      if (!ids[name]) {
+        setStatus('Creating your Digital ID (one time)…', 0);
+        await nextFrame();
+        ids[name] = createIdentity(name);
+        store.set('observer-ids', JSON.stringify(ids));
+      }
+      return { p12: b64ToU8(ids[name].p12), pwd: ids[name].pwd, cn: name };
+    }
+    function renderIdStatus() {
+      const el = $('id-status');
+      if (store.get('observer-p12-imported')) {
+        el.textContent = `Using imported certificate: ${store.get('observer-p12-imported-cn')} (issued by ${store.get('observer-p12-imported-issuer') || 'unknown'})`;
+      } else {
+        const name = $('default-name').value.trim() || 'Observer User';
+        const id = getIds()[name];
+        el.textContent = id ? `Self-signed ID for "${name}", created ${new Date(id.created).toLocaleDateString()}`
+                            : `No ID yet for "${name}". One is created the first time you digitally sign.`;
+      }
+    }
+
+    $('p12-input').onchange = async e => {
+      const f = e.target.files[0]; e.target.value = '';
+      if (!f) return;
+      try {
+        const u8 = toU8(await f.arrayBuffer());
+        const pwd = $('p12-pwd').value;
+        const info = parseP12(u8, pwd);
+        store.set('observer-p12-imported', forge.util.encode64(u8ToBin(u8)));
+        store.set('observer-p12-imported-pwd', pwd);
+        store.set('observer-p12-imported-cn', info.cn || f.name);
+        store.set('observer-p12-imported-issuer', info.issuer);
+        $('p12-pwd').value = '';
+        renderIdStatus();
+        setStatus('Certificate imported');
+      } catch (err) { setStatus('Import failed: wrong password or invalid file', 4000); }
+    };
+    $('remove-id').onclick = () => {
+      ['observer-p12-imported', 'observer-p12-imported-pwd', 'observer-p12-imported-cn', 'observer-p12-imported-issuer'].forEach(k => store.del(k));
+      renderIdStatus();
+      setStatus('Imported certificate removed');
+    };
+    $('export-id').onclick = () => {
+      const pwd = $('p12-pwd').value;
+      if (!pwd) { setStatus('Enter a password to protect the backup'); return; }
+      let b64, cn;
+      if (store.get('observer-p12-imported')) {
+        const info = parseP12(b64ToU8(store.get('observer-p12-imported')), store.get('observer-p12-imported-pwd', ''));
+        b64 = p12ToB64(info.key, info.cert, pwd); cn = info.cn;
+      } else {
+        cn = $('default-name').value.trim() || 'Observer User';
+        const id = getIds()[cn];
+        if (!id) { setStatus('No Digital ID for this name yet'); return; }
+        const info = parseP12(b64ToU8(id.p12), id.pwd);
+        b64 = p12ToB64(info.key, info.cert, pwd);
+      }
+      download(b64ToU8(b64), `${cn.replace(/[^\w.-]+/g, '_')}-digital-id.p12`, 'application/x-pkcs12');
+      $('p12-pwd').value = '';
+    };
+
+    $('apply-cert').onclick = () => run('Sign', async () => {
+      const name = $('signer-name').value.trim() || $('default-name').value.trim() || 'Observer User';
+      if (hasInk()) await editPdf(null);   // write pending drawings before sealing
+      endPlacement();
+      const id = await getSigningId(name);
+      setStatus('Signing…', 0);
+      await nextFrame();
+      const opts = { p12cert: id.p12.slice().buffer, pwd: id.pwd, reason: 'Signed with Observer', name: id.cn, location: 'Observer PDF' };
+      // First signature certifies the document but still allows further signatures;
+      // later signatures are added as incremental updates so earlier ones stay valid.
+      if (!hasSignature(pdfBytes)) opts.permission = 2;
+      const signer = new Zga.PdfSigner(opts);
+      const out = await signer.sign(pdfBytes.slice().buffer);
+      pdfBytes = toU8(out);
+      signed = true;
+      updateLock();
+      await reloadView();
+      closeModal('sig-modal');
+      setStatus(`Digitally signed as ${id.cn}`);
+    });
+
+    // ---------- OCR ----------
+    function loadScript(src) {
+      return new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = src; s.onload = res; s.onerror = () => rej(new Error('could not load OCR engine'));
+        document.head.appendChild(s);
+      });
+    }
+    $('ocr-btn').onclick = () => run('OCR', async () => {
       setStatus('Running OCR…', 0);
       ocrOut.style.display = 'block';
       ocrOut.textContent = 'Processing…';
       try {
+        if (!window.Tesseract) await loadScript('vendor/tesseract.min.js');
         const { data: { text } } = await Tesseract.recognize(canvas, ocrLang, {
-          logger: m => { if (m.status === 'recognizing text') setStatus(`OCR ${Math.round(m.progress*100)}%`, 0); }
+          logger: m => { if (m.status === 'recognizing text') setStatus(`OCR ${Math.round(m.progress * 100)}%`, 0); }
         });
         ocrOut.textContent = text || '(no text found)';
         setStatus('OCR complete');
-      } catch (e) { ocrOut.textContent = 'OCR failed: ' + e.message; setStatus('OCR error'); }
-    };
-
-    document.getElementById('draw-btn').onclick = () => {
-      drawingMode = !drawingMode;
-      drawCanvas.classList.toggle('active', drawingMode);
-      document.getElementById('draw-btn').textContent = drawingMode ? 'Drawing' : 'Draw';
-      document.getElementById('draw-btn').style.background = drawingMode ? 'var(--clay)' : '';
-    };
-    function getPos(e, c) {
-      const r = c.getBoundingClientRect();
-      const t = e.touches ? e.touches[0] : e;
-      return { x: (t.clientX - r.left) * (c.width / r.width), y: (t.clientY - r.top) * (c.height / r.height) };
-    }
-    drawCanvas.onmousedown = drawCanvas.ontouchstart = e => { if (!drawingMode) return; e.preventDefault(); isDrawing = true; const p = getPos(e, drawCanvas); lastX = p.x; lastY = p.y; };
-    drawCanvas.onmousemove = drawCanvas.ontouchmove = e => {
-      if (!isDrawing || !drawingMode) return; e.preventDefault();
-      const p = getPos(e, drawCanvas);
-      drawCtx.strokeStyle = '#c6a36a';
-      drawCtx.lineWidth = 2.5;
-      drawCtx.lineCap = 'round';
-      drawCtx.beginPath();
-      drawCtx.moveTo(lastX, lastY);
-      drawCtx.lineTo(p.x, p.y);
-      drawCtx.stroke();
-      lastX = p.x; lastY = p.y;
-    };
-    drawCanvas.onmouseup = drawCanvas.ontouchend = () => isDrawing = false;
-
-    document.getElementById('sign-btn').onclick = () => {
-      const def = document.getElementById('default-name').value;
-      if (def) document.getElementById('signer-name').value = def;
-      openModal('sig-modal');
-    };
-    const sigPad = document.getElementById('sig-pad');
-    const sigCtx = sigPad.getContext('2d');
-    let sigDrawing = false;
-    sigPad.onmousedown = sigPad.ontouchstart = e => { e.preventDefault(); sigDrawing = true; const p = getPos(e, sigPad); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); };
-    sigPad.onmousemove = sigPad.ontouchmove = e => { if (!sigDrawing) return; e.preventDefault(); const p = getPos(e, sigPad); sigCtx.lineTo(p.x, p.y); sigCtx.strokeStyle = '#141311'; sigCtx.lineWidth = 2.2; sigCtx.stroke(); };
-    sigPad.onmouseup = sigPad.ontouchend = () => sigDrawing = false;
-    document.getElementById('clear-sig').onclick = () => sigCtx.clearRect(0,0,sigPad.width,sigPad.height);
-
-    document.getElementById('apply-visual').onclick = async () => {
-      setStatus('Placing signature…');
-      try {
-        const pdfLibDoc = await PDFLib.PDFDocument.load(pdfBytes);
-        const sigDataUrl = sigPad.toDataURL('image/png');
-        const sigImage = await pdfLibDoc.embedPng(sigDataUrl);
-        const page = pdfLibDoc.getPages()[currentPage - 1];
-        const { width } = page.getSize();
-        page.drawImage(sigImage, { x: width - 200, y: 50, width: 160, height: 55 });
-        pdfBytes = await pdfLibDoc.save();
-        pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
-        await renderPage(currentPage);
-        setStatus('Signature placed');
-        closeModal('sig-modal');
-      } catch (e) { setStatus('Error: ' + e.message); }
-    };
-
-    document.getElementById('apply-cert').onclick = async () => {
-      const name = document.getElementById('signer-name').value.trim() || 'Observer User';
-      setStatus('Signing…', 0);
-      try {
-        const keys = forge.pki.rsa.generateKeyPair(2048);
-        const cert = forge.pki.createCertificate();
-        cert.publicKey = keys.publicKey;
-        cert.serialNumber = '01' + Date.now();
-        cert.validity.notBefore = new Date();
-        cert.validity.notAfter = new Date();
-        cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 5);
-        const attrs = [{ name: 'commonName', value: name }, { name: 'organizationName', value: 'Observer' }];
-        cert.setSubject(attrs);
-        cert.setIssuer(attrs);
-        cert.sign(keys.privateKey, forge.md.sha256.create());
-
-        const p12Asn1 = forge.pkcs12.toPkcs12Asn1(keys.privateKey, cert, 'observer', { algorithm: '3des' });
-        const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
-        const p12Buf = new Uint8Array(p12Der.length);
-        for (let i = 0; i < p12Der.length; i++) p12Buf[i] = p12Der.charCodeAt(i);
-        const p12Copy = p12Buf.slice().buffer;
-        const pdfCopy = pdfBytes.slice(0);
-
-        const signer = new Zga.PdfSigner({
-          p12cert: p12Copy,
-          pwd: 'observer',
-          permission: 1,
-          reason: 'Signed with Observer',
-          name: name,
-          location: 'Local'
-        });
-
-        const signed = await signer.sign(pdfCopy);
-        pdfBytes = signed instanceof Uint8Array ? signed.buffer.slice(signed.byteOffset, signed.byteOffset + signed.byteLength) : signed.slice(0);
-
-        pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
-        await renderPage(currentPage);
-        setStatus(`Certified signature applied`);
-        closeModal('sig-modal');
       } catch (e) {
-        console.error(e);
-        setStatus('Sign error: ' + e.message);
+        ocrOut.textContent = 'OCR failed: ' + (e.message || e) + (navigator.onLine ? '' : '\nOCR needs an internet connection the first time.');
+        setStatus('OCR error');
       }
-    };
+    });
 
-    document.getElementById('tools-btn').onclick = () => openModal('tools-modal');
-    document.getElementById('rotate-btn').onclick = async () => {
-      try {
-        const doc = await PDFLib.PDFDocument.load(pdfBytes);
-        const page = doc.getPages()[currentPage - 1];
-        page.setRotation(PDFLib.degrees((page.getRotation().angle + 90) % 360));
-        pdfBytes = await doc.save();
-        pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
-        await renderPage(currentPage);
-        setStatus('Page rotated');
-        closeModal('tools-modal');
-      } catch (e) { setStatus('Error: ' + e.message); }
+    // ---------- Page tools ----------
+    $('tools-btn').onclick = () => {
+      setDrawing(false);
+      $('file-list').innerHTML = '';
+      const names = [originalName + ' (current)', ...extraPdfs.map(f => f.name)];
+      names.forEach((n, i) => { const d = document.createElement('div'); d.textContent = `${i + 1}. ${n}`; $('file-list').appendChild(d); });
+      openModal('tools-modal');
     };
-    document.getElementById('delete-page-btn').onclick = async () => {
-      if (totalPages <= 1) { setStatus('Cannot delete last page'); return; }
-      try {
-        const doc = await PDFLib.PDFDocument.load(pdfBytes);
-        doc.removePage(currentPage - 1);
-        pdfBytes = await doc.save();
-        pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
-        totalPages = pdfDoc.numPages;
-        if (currentPage > totalPages) currentPage = totalPages;
-        await renderPage(currentPage);
-        setStatus('Page deleted');
-        closeModal('tools-modal');
-      } catch (e) { setStatus('Error: ' + e.message); }
-    };
-    document.getElementById('combine-btn').onclick = async () => {
-      if (loadedPdfs.length < 2) { setStatus('Add at least 2 PDFs first'); return; }
-      setStatus('Combining…');
-      try {
-        const merged = await PDFLib.PDFDocument.create();
-        for (const item of loadedPdfs) {
-          const src = await PDFLib.PDFDocument.load(item.bytes);
-          const pages = await merged.copyPages(src, src.getPageIndices());
-          pages.forEach(p => merged.addPage(p));
-        }
-        pdfBytes = await merged.save();
-        originalName = 'combined.pdf';
-        pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
-        totalPages = pdfDoc.numPages;
-        currentPage = 1;
-        await renderPage(1);
-        setStatus(`Combined ${loadedPdfs.length} files`);
-        closeModal('tools-modal');
-      } catch (e) { setStatus('Combine error: ' + e.message); }
-    };
+    $('rotate-btn').onclick = () => run('Rotate', async () => {
+      const idx = currentPage - 1;
+      if (await editPdf(doc => { const p = doc.getPage(idx); p.setRotation(degrees((p.getRotation().angle + 90) % 360)); })) {
+        setStatus('Page rotated'); closeModal('tools-modal');
+      }
+    });
+    $('delete-page-btn').onclick = () => run('Delete', async () => {
+      if (totalPages <= 1) { setStatus('Cannot delete the last page'); return; }
+      const idx = currentPage - 1;
+      if (await editPdf(doc => doc.removePage(idx))) { setStatus('Page deleted'); closeModal('tools-modal'); }
+    });
+    $('combine-btn').onclick = () => run('Combine', async () => {
+      if (!extraPdfs.length) { setStatus('Use Add to load more PDFs first'); return; }
+      if (signed) { closeModal('tools-modal'); lockedNotice(); return; }
+      setStatus('Combining…', 0);
+      const cur = await PDFDocument.load(pdfBytes);
+      applyInk(cur, ink);
+      const merged = await PDFDocument.create();
+      for (const src of [cur, ...await Promise.all(extraPdfs.map(f => PDFDocument.load(f.bytes)))]) {
+        const pages = await merged.copyPages(src, src.getPageIndices());
+        pages.forEach(p => merged.addPage(p));
+      }
+      const count = extraPdfs.length + 1;
+      pdfBytes = await merged.save();
+      ink = {};
+      extraPdfs = [];
+      originalName = 'combined.pdf';
+      currentPage = 1;
+      await reloadView();
+      setStatus(`Combined ${count} files`);
+      closeModal('tools-modal');
+    });
 
-    document.getElementById('save-btn').onclick = () => {
-      if (!pdfBytes) return;
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
+    // ---------- Save ----------
+    function download(bytes, name, type = 'application/pdf') {
+      const url = URL.createObjectURL(new Blob([bytes], { type }));
       const a = document.createElement('a');
-      a.href = url;
-      a.download = originalName.replace(/\.pdf$/i, '') + '-observer.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setStatus('Saved to Files');
-    };
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+    $('save-btn').onclick = () => run('Save', async () => {
+      if (!pdfBytes) return;
+      if (placement) { setStatus('Apply or cancel the signature placement first'); return; }
+      if (hasInk()) await editPdf(null);
+      download(pdfBytes, originalName.replace(/\.pdf$/i, '') + '-observer.pdf');
+      setStatus('Saved');
+    });
+
+    updateLock();
+    renderIdStatus();
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
   </script>
 </body>
 </html>
