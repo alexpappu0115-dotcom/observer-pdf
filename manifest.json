@@ -1,1 +1,10 @@
-PLACEHOLDER
+{
+  "name": "Observer PDF Studio",
+  "short_name": "Observer",
+  "description": "Full local-first Acrobat alternative: view, draw, OCR, sign, combine, reorder",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0c0d0f",
+  "theme_color": "#c6a36a",
+  "icons": []
+}
