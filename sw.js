@@ -1,9 +1,10 @@
 // Observer service worker: makes the app work offline after the first visit.
 // Bump VERSION whenever vendor/ or icons/ change so phones pick up the new files.
-const VERSION = 'observer-v2';
+const VERSION = 'observer-v3';
 const CORE = [
   './',
   'index.html',
+  'config.js',
   'manifest.json',
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -35,12 +36,14 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // The page itself: network first so updates show up, cache when offline.
-  if (req.mode === 'navigate' || (url.origin === location.origin && url.pathname.endsWith('/index.html'))) {
+  // The page and its config: network first so updates show up, cache when offline.
+  const isConfig = url.origin === location.origin && url.pathname.endsWith('/config.js');
+  if (req.mode === 'navigate' || isConfig || (url.origin === location.origin && url.pathname.endsWith('/index.html'))) {
+    const key = isConfig ? 'config.js' : 'index.html';
     e.respondWith(
       fetch(req)
-        .then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put('index.html', copy)); return res; })
-        .catch(() => caches.match('index.html'))
+        .then(res => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(key, copy)); } return res; })
+        .catch(() => caches.match(key))
     );
     return;
   }

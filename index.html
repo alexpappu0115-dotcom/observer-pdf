@@ -268,6 +268,23 @@
     #file-list { font-size: 0.82rem; color: #bbb; margin: 0.6rem 0; line-height: 1.5; }
 
     input[type="file"] { position: absolute; left: -9999px; width: 1px; }
+
+    /* Open / Save sheets */
+    .sheet-btn {
+      display: flex; align-items: center; gap: 0.8rem;
+      width: 100%; margin: 0.4rem 0; padding: 0.85rem 0.9rem;
+      background: var(--elev); color: var(--text); text-align: left; font-size: 0.95rem;
+    }
+    .sheet-btn .ico { font-size: 1.25rem; width: 1.6rem; text-align: center; }
+    .sheet-btn small { display: block; font-weight: 400; color: #999; font-size: 0.75rem; margin-top: 0.15rem; }
+    .sheet-btn.primary { background: var(--brass); color: var(--ink); }
+    .sheet-btn.primary small { color: #3a3226; }
+    .sheet-row { display: flex; gap: 0.5rem; }
+    .sheet-row > button { flex: 1; background: #34353a; margin-top: 0.5rem; }
+    .source-line { font-size: 0.8rem; color: #aaa; margin: -0.4rem 0 0.6rem; }
+    #start { display: block; }
+    .start-actions { display: flex; gap: 0.6rem; margin: -1rem 1.2rem 1rem; }
+    .start-actions button { flex: 1; padding: 0.8rem 0.5rem; }
   </style>
 </head>
 <body>
@@ -287,11 +304,17 @@
   <input type="file" id="multi-input" accept="application/pdf,.pdf" multiple>
   <input type="file" id="p12-input" accept=".p12,.pfx,application/x-pkcs12">
 
-  <label id="dropzone" for="file-input">
-    <h2>Open a PDF</h2>
-    <p>Tap here or drop a file</p>
-    <p style="margin-top:0.8rem; font-size:0.8rem; color:var(--brass);">View · Draw · OCR · Sign · Combine</p>
-  </label>
+  <div id="start">
+    <div id="dropzone" role="button" tabindex="0">
+      <h2>Open a PDF</h2>
+      <p>Tap here or drop a file</p>
+      <p style="margin-top:0.8rem; font-size:0.8rem; color:var(--brass);">View · Draw · OCR · Sign · Combine</p>
+    </div>
+    <div class="start-actions">
+      <button class="secondary" id="start-files">Files / iCloud Drive</button>
+      <button class="secondary" id="start-gdrive">Google Drive</button>
+    </div>
+  </div>
 
   <div id="workspace">
     <div id="lock-banner" class="lock-banner">
@@ -329,8 +352,8 @@
   <div id="status" class="status-toast" role="status"></div>
 
   <div class="bottom-bar" id="bottom-bar">
-    <label for="file-input" class="btn secondary">Open</label>
-    <label for="multi-input" class="btn secondary">Add</label>
+    <button class="secondary" id="open-btn">Open</button>
+    <button class="secondary" id="add-btn">Add</button>
     <button class="secondary" id="prev" aria-label="Previous page">◀</button>
     <span class="page-info" id="page-info">1 / 1</span>
     <button class="secondary" id="next" aria-label="Next page">▶</button>
@@ -371,6 +394,38 @@
     </div>
   </div>
 
+  <!-- Open Modal -->
+  <div id="open-modal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="open-title">Open a PDF</h3>
+      <button class="sheet-btn" id="open-files"><span class="ico">📁</span><span>Files / iCloud Drive<small>Your device, iCloud Drive, and any cloud app shown in Files</small></span></button>
+      <button class="sheet-btn" id="open-gdrive"><span class="ico">△</span><span>Google Drive<small>Sign in with Google and pick a file</small></span></button>
+      <p class="note">On iPhone, Files also lists Google Drive, Dropbox and OneDrive if their apps are installed and turned on under Files → Browse → ⋯ → Edit.</p>
+      <button class="secondary" style="width:100%;" data-close="open-modal">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Save Modal -->
+  <div id="save-modal" class="modal-overlay">
+    <div class="modal">
+      <h3>Save</h3>
+      <div class="source-line" id="save-source"></div>
+      <label for="save-name" style="font-size:0.85rem; color:#aaa;">File name</label>
+      <input type="text" id="save-name" autocomplete="off" spellcheck="false">
+      <button class="sheet-btn primary" id="save-original"><span class="ico">↺</span><span id="save-original-label">Save over original</span></button>
+      <button class="sheet-btn" id="save-files"><span class="ico">📁</span><span>Save to Files / iCloud Drive<small id="save-files-hint">Choose iCloud Drive or another location</small></span></button>
+      <div class="sheet-btn" style="cursor:default; flex-wrap:wrap;">
+        <span class="ico">△</span><span style="flex:1;">Save copy to Google Drive</span>
+        <div class="sheet-row" style="width:100%;">
+          <button class="secondary" id="save-gdrive-here">My Drive</button>
+          <button class="secondary" id="save-gdrive-folder">Choose folder…</button>
+        </div>
+      </div>
+      <button class="sheet-btn" id="save-download"><span class="ico">⬇</span><span>Download<small>Saves to your browser's download folder</small></span></button>
+      <button class="secondary" style="width:100%; margin-top:0.4rem;" data-close="save-modal">Cancel</button>
+    </div>
+  </div>
+
   <!-- Settings Modal -->
   <div id="settings-modal" class="modal-overlay">
     <div class="modal">
@@ -400,8 +455,12 @@
         <button class="secondary" id="remove-id">Remove imported</button>
       </div>
 
+      <h4>Google Drive</h4>
+      <div id="gdrive-status" class="note"></div>
+      <button class="secondary" id="gdrive-signout" style="width:100%; display:none;">Sign out of Google Drive</button>
+
       <div class="settings-row" style="margin-top:1rem;">
-        <p class="note">All processing happens on this device. Nothing is uploaded. OCR downloads its engine and language data the first time you use it.</p>
+        <p class="note">All processing happens on this device. Files only leave it when you save to Google Drive, and then they go straight to your Google account. Observer can only see files you pick or create with it. OCR downloads its engine and language data the first time you use it.</p>
       </div>
       <button class="secondary" style="width:100%;" data-close="settings-modal">Done</button>
     </div>
@@ -411,6 +470,7 @@
   <script src="vendor/pdf-lib.min.js"></script>
   <script src="vendor/forge.min.js"></script>
   <script src="vendor/zgapdfsigner.min.js"></script>
+  <script src="config.js"></script>
 
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
@@ -494,25 +554,69 @@
     $('unlock-btn').onclick = () => { signed = false; updateLock(); setStatus('Unlocked. Saving edits will invalidate the existing signature.', 4000); };
 
     // ---------- Opening files ----------
-    $('settings-btn').onclick = () => { renderIdStatus(); openModal('settings-modal'); };
+    $('settings-btn').onclick = () => { renderIdStatus(); renderDriveStatus(); openModal('settings-modal'); };
     const isPdf = f => f && (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name));
+    const PDF_TYPES = [{ description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } }];
+
+    // Where the current document came from, so Save can write back to it:
+    // {type:'local'} | {type:'handle', handle} (desktop file access) | {type:'drive', id, name, parentId}
+    let source = { type: 'local' };
 
     fileInput.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await openFile(f); };
-    multiInput.onchange = async e => {
-      const files = [...e.target.files].filter(isPdf); e.target.value = '';
-      if (!files.length) return;
+    multiInput.onchange = e => { const files = [...e.target.files]; e.target.value = ''; run('Load', () => addFiles(files)); };
+
+    // files: [File], srcs: optional matching sources (used for the first file if nothing is open).
+    // Call inside run().
+    async function addFiles(files, srcs = []) {
+      const list = files.map((f, i) => ({ f, src: srcs[i] })).filter(x => isPdf(x.f));
+      if (!list.length) return;
       let start = 0;
-      if (!pdfDoc) { await openFile(files[0]); start = 1; }
-      for (const f of files.slice(start)) extraPdfs.push({ name: f.name, bytes: toU8(await f.arrayBuffer()) });
-      if (files.length > start) setStatus(`Added ${files.length - start} file(s) for Combine (Pages menu)`, 3500);
-    };
+      if (!pdfDoc) { await loadDocument(list[0].f, list[0].src); start = 1; }
+      for (const { f } of list.slice(start)) extraPdfs.push({ name: f.name, bytes: toU8(await f.arrayBuffer()) });
+      if (list.length > start) setStatus(`Added ${list.length - start} file(s) for Combine (Pages menu)`, 3500);
+    }
+
+    dropzone.onclick = () => openFromFiles('open');
+    dropzone.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFromFiles('open'); } };
     dropzone.ondragover = e => { e.preventDefault(); dropzone.style.background = 'rgba(198,163,106,0.15)'; };
     dropzone.ondragleave = () => dropzone.style.background = '';
     dropzone.ondrop = e => { e.preventDefault(); dropzone.style.background = ''; if (e.dataTransfer.files[0]) openFile(e.dataTransfer.files[0]); };
+    $('start-files').onclick = () => openFromFiles('open');
+    $('start-gdrive').onclick = () => openFromDrive('open');
 
-    async function openFile(file) {
+    let openMode = 'open';
+    function showOpenSheet(mode) {
+      openMode = mode;
+      $('open-title').textContent = mode === 'add' ? 'Add PDFs to combine' : 'Open a PDF';
+      openModal('open-modal');
+      if (driveConfigured) gPreload().catch(() => {});
+    }
+    $('open-btn').onclick = () => showOpenSheet('open');
+    $('add-btn').onclick = () => showOpenSheet('add');
+    $('open-files').onclick = () => { closeModal('open-modal'); openFromFiles(openMode); };
+    $('open-gdrive').onclick = () => { closeModal('open-modal'); openFromDrive(openMode); };
+
+    // Files / iCloud Drive. On iPhone/iPad the file input opens the Files picker (iCloud Drive and
+    // any installed cloud app). On desktop Chrome/Edge we use the File System Access API instead,
+    // which keeps a handle so "Save over original" can write back to the same file.
+    async function openFromFiles(mode) {
+      if (!window.showOpenFilePicker) { (mode === 'add' ? multiInput : fileInput).click(); return; }
+      try {
+        const handles = await window.showOpenFilePicker({ multiple: mode === 'add', types: PDF_TYPES });
+        const files = await Promise.all(handles.map(h => h.getFile()));
+        if (mode === 'add') await run('Load', () => addFiles(files, handles.map(handle => ({ type: 'handle', handle }))));
+        else await openFile(files[0], { type: 'handle', handle: handles[0] });
+      } catch (e) {
+        if (e.name !== 'AbortError') setStatus('Open error: ' + e.message, 4000);
+      }
+    }
+
+    async function openFile(file, src = { type: 'local' }) {
       if (!isPdf(file)) { setStatus('That file is not a PDF'); return; }
-      await run('Load', async () => {
+      await run('Load', () => loadDocument(file, src));
+    }
+    async function loadDocument(file, src) {
+      {
         setStatus('Loading…', 0);
         const bytes = toU8(await file.arrayBuffer());
         // Validate before replacing the current document
@@ -520,6 +624,7 @@
         test.destroy();
         pdfBytes = bytes;
         originalName = file.name;
+        source = src || { type: 'local' };
         extraPdfs = [];
         ink = {};
         currentPage = 1;
@@ -529,13 +634,13 @@
         endPlacement();
         setDrawing(false);
         ocrOut.style.display = 'none';
-        dropzone.style.display = 'none';
+        $('start').style.display = 'none';
         workspace.style.display = 'flex';
         bottomBar.classList.add('show');
         $('zoom-controls').classList.add('show');
         await reloadView();
         setStatus(`Loaded ${originalName}${signed ? ' (digitally signed)' : ''}`);
-      });
+      }
     }
 
     // ---------- Rendering ----------
@@ -958,7 +1063,7 @@
     function loadScript(src) {
       return new Promise((res, rej) => {
         const s = document.createElement('script');
-        s.src = src; s.onload = res; s.onerror = () => rej(new Error('could not load OCR engine'));
+        s.src = src; s.async = true; s.onload = res; s.onerror = () => { s.remove(); rej(new Error('could not load ' + new URL(src, location.href).hostname)); };
         document.head.appendChild(s);
       });
     }
@@ -1014,6 +1119,7 @@
       ink = {};
       extraPdfs = [];
       originalName = 'combined.pdf';
+      source = { type: 'local' };
       currentPage = 1;
       await reloadView();
       setStatus(`Combined ${count} files`);
@@ -1028,13 +1134,270 @@
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     }
+    function setLabel(el, main, sub) {
+      el.textContent = main;
+      if (sub) { const s = document.createElement('small'); s.textContent = sub; el.appendChild(s); }
+    }
+    const outName = () => {
+      let n = ($('save-name').value.trim() || originalName).replace(/[\\/:*?"<>|]+/g, '-');
+      return /\.pdf$/i.test(n) ? n : n + '.pdf';
+    };
+    const savedOk = msg => { closeModal('save-modal'); setStatus(msg, 3500); };
+    // iPhone/iPad/Android: the share sheet's "Save to Files" reaches iCloud Drive and other cloud apps
+    const shareTarget = file => !window.showSaveFilePicker && navigator.maxTouchPoints > 0 &&
+      !!navigator.canShare && navigator.canShare({ files: [file] });
+
+    async function writeHandle(handle, bytes) {
+      if (handle.queryPermission && (await handle.queryPermission({ mode: 'readwrite' })) !== 'granted') {
+        if ((await handle.requestPermission({ mode: 'readwrite' })) !== 'granted') throw new Error('permission to write the file was denied');
+      }
+      const w = await handle.createWritable();
+      await w.write(bytes);
+      await w.close();
+    }
+
+    // Save opens a sheet. Pending drawings are written first, so the bytes are final and each
+    // save button can hand them to the share sheet / Google sign-in straight from the tap.
     $('save-btn').onclick = () => run('Save', async () => {
       if (!pdfBytes) return;
       if (placement) { setStatus('Apply or cancel the signature placement first'); return; }
+      setDrawing(false);
       if (hasInk()) await editPdf(null);
-      download(pdfBytes, originalName.replace(/\.pdf$/i, '') + '-observer.pdf');
-      setStatus('Saved');
+      $('save-name').value = originalName;
+      const orig = $('save-original'), origLabel = $('save-original-label');
+      orig.style.display = source.type === 'local' ? 'none' : 'flex';
+      if (source.type === 'drive') setLabel(origLabel, 'Update original in Google Drive', 'Google keeps the previous version in version history');
+      if (source.type === 'handle') setLabel(origLabel, `Save over ${source.handle.name}`, 'Replaces the file you opened');
+      $('save-source').textContent = source.type === 'drive' ? `Opened from Google Drive: ${source.name}`
+        : source.type === 'handle' ? `Opened from your computer: ${source.handle.name}` : '';
+      $('save-gdrive-here').textContent = source.type === 'drive' && source.parentId ? 'Same folder' : 'My Drive';
+      const probe = new File([new Uint8Array(1)], 'x.pdf', { type: 'application/pdf' });
+      $('save-files-hint').textContent = window.showSaveFilePicker ? 'Choose any folder, including iCloud Drive'
+        : shareTarget(probe) ? 'Opens the share sheet: tap Save to Files, then iCloud Drive'
+        : 'Downloads the file (set your browser to save downloads to iCloud Drive)';
+      openModal('save-modal');
+      if (driveConfigured) gPreload().catch(() => {});
     });
+
+    $('save-files').onclick = async () => {
+      const name = outName();
+      const file = new File([pdfBytes], name, { type: 'application/pdf' });
+      try {
+        if (window.showSaveFilePicker) {
+          const handle = await window.showSaveFilePicker({ suggestedName: name, types: PDF_TYPES });
+          await writeHandle(handle, pdfBytes);
+          source = { type: 'handle', handle };
+          originalName = handle.name;
+          savedOk(`Saved ${handle.name}`);
+        } else if (shareTarget(file)) {
+          await navigator.share({ files: [file] });   // called directly from the tap, as iOS requires
+          savedOk('Done');
+        } else {
+          download(pdfBytes, name);
+          savedOk(`Downloaded ${name}`);
+        }
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+        if (e.name === 'NotAllowedError') { setStatus('Tap "Save to Files" again', 3000); return; }
+        setStatus('Save error: ' + e.message, 4000);
+      }
+    };
+    $('save-download').onclick = () => { const name = outName(); download(pdfBytes, name); savedOk(`Downloaded ${name}`); };
+
+    $('save-original').onclick = () => {
+      if (source.type === 'drive') {
+        const token = driveToken(); if (!token) return;
+        run('Save', async () => {
+          await token;
+          setStatus('Saving to Google Drive…', 0);
+          await driveUpdate(source.id, pdfBytes);
+          savedOk(`Updated ${source.name} in Google Drive`);
+        });
+      } else if (source.type === 'handle') {
+        run('Save', async () => { await writeHandle(source.handle, pdfBytes); savedOk(`Saved ${source.handle.name}`); });
+      }
+    };
+    $('save-gdrive-here').onclick = () => {
+      const token = driveToken(); if (!token) return;
+      const name = outName();
+      run('Save', async () => {
+        await token;
+        setStatus('Saving to Google Drive…', 0);
+        let parentId = source.type === 'drive' ? source.parentId : null, f;
+        try { f = await driveCreate(pdfBytes, name, parentId); }
+        catch (e) {
+          if (!parentId) throw e;
+          parentId = null;  // Observer can't write to that folder: fall back to My Drive
+          f = await driveCreate(pdfBytes, name, null);
+        }
+        source = { type: 'drive', id: f.id, name: f.name, parentId };
+        originalName = f.name;
+        savedOk(`Saved to Google Drive${parentId ? '' : ' (My Drive)'}: ${f.name}`);
+      });
+    };
+    $('save-gdrive-folder').onclick = () => {
+      const token = driveToken(); if (!token) return;
+      const name = outName();
+      run('Save', async () => {
+        await token;
+        const [folder] = await pickDrive({ folder: true });
+        if (!folder) return;
+        setStatus('Saving to Google Drive…', 0);
+        const f = await driveCreate(pdfBytes, name, folder.id);
+        source = { type: 'drive', id: f.id, name: f.name, parentId: folder.id };
+        originalName = f.name;
+        savedOk(`Saved to ${folder.name}: ${f.name}`);
+      });
+    };
+
+    // ---------- Google Drive ----------
+    // Uses Google sign-in (token in memory only) with the drive.file scope: Observer can only
+    // see files the user picks in the Google Picker or creates with Observer.
+    const GCFG = (window.OBSERVER_CONFIG && window.OBSERVER_CONFIG.google) || {};
+    const driveConfigured = !!(GCFG.clientId && GCFG.apiKey && GCFG.appId);
+    const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+    const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
+    const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
+    const G = { client: null, token: null, exp: 0, loading: null, onToken: null, onError: null };
+
+    function gPreload() {
+      if (!G.loading) {
+        G.loading = (async () => {
+          await Promise.all([
+            window.google && google.accounts && google.accounts.oauth2 ? null : loadScript('https://accounts.google.com/gsi/client'),
+            window.gapi ? null : loadScript('https://apis.google.com/js/api.js')
+          ]);
+          await new Promise((res, rej) => gapi.load('picker', {
+            callback: res, onerror: () => rej(new Error('Google Picker failed to load')),
+            timeout: 15000, ontimeout: () => rej(new Error('Google Picker timed out'))
+          }));
+          G.client = google.accounts.oauth2.initTokenClient({
+            client_id: GCFG.clientId,
+            scope: DRIVE_SCOPE,
+            callback: r => G.onToken && G.onToken(r),
+            error_callback: e => G.onError && G.onError(e)
+          });
+        })().catch(e => { G.loading = null; throw e; });
+      }
+      return G.loading;
+    }
+
+    // Returns a promise for an access token, or null if Drive can't be used yet.
+    // Call it synchronously from a tap: it may open Google's sign-in popup.
+    function driveToken() {
+      if (!driveConfigured) {
+        setStatus('Google Drive isn\'t set up yet: add your Google keys to config.js (see README).', 6000);
+        return null;
+      }
+      if (!G.client) {
+        setStatus('Connecting to Google…', 0);
+        gPreload().then(() => setStatus('Connected to Google. Tap again to continue.', 4000),
+                        e => setStatus('Could not reach Google: ' + e.message, 5000));
+        return null;
+      }
+      if (G.token && Date.now() < G.exp - 60000) return Promise.resolve(G.token);
+      const p = new Promise((resolve, reject) => {
+        G.onToken = r => {
+          if (r.error) return reject(new Error(r.error_description || r.error));
+          if (!google.accounts.oauth2.hasGrantedAllScopes(r, DRIVE_SCOPE)) return reject(new Error('Google Drive access was not granted'));
+          G.token = r.access_token;
+          G.exp = Date.now() + (Number(r.expires_in) || 3600) * 1000;
+          renderDriveStatus();
+          resolve(G.token);
+        };
+        G.onError = e => reject(new Error(
+          e && e.type === 'popup_closed' ? 'Google sign-in was closed'
+          : e && e.type === 'popup_failed_to_open' ? 'allow pop-ups for this site to sign in to Google'
+          : 'Google sign-in failed'));
+        G.client.requestAccessToken({ prompt: '' });
+      });
+      p.catch(() => {});
+      return p;
+    }
+
+    function pickDrive({ multi = false, folder = false } = {}) {
+      return new Promise(resolve => {
+        const P = google.picker;
+        const view = folder
+          ? new P.DocsView(P.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true).setMimeTypes('application/vnd.google-apps.folder')
+          : new P.DocsView(P.ViewId.DOCS).setIncludeFolders(true).setMimeTypes('application/pdf');
+        const builder = new P.PickerBuilder()
+          .addView(view)
+          .setOAuthToken(G.token)
+          .setDeveloperKey(GCFG.apiKey)
+          .setAppId(GCFG.appId)
+          .setTitle(folder ? 'Choose a folder' : multi ? 'Choose PDFs' : 'Choose a PDF')
+          .enableFeature(P.Feature.SUPPORT_DRIVES)
+          .setCallback(d => {
+            const action = d[P.Response.ACTION];
+            if (action === P.Action.PICKED) resolve(d[P.Response.DOCUMENTS].map(x => ({ id: x[P.Document.ID], name: x[P.Document.NAME], parentId: x[P.Document.PARENT_ID] || null })));
+            else if (action === P.Action.CANCEL) resolve([]);
+          });
+        if (multi) builder.enableFeature(P.Feature.MULTISELECT_ENABLED);
+        builder.build().setVisible(true);
+      });
+    }
+
+    async function driveFetch(url, opts = {}) {
+      const res = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + G.token } });
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try { const j = await res.json(); if (j.error && j.error.message) msg = j.error.message; } catch {}
+        if (res.status === 401) { G.token = null; msg = 'Google session expired, tap again to sign in'; }
+        throw new Error(msg);
+      }
+      return res;
+    }
+    async function driveDownload(id) {
+      const res = await driveFetch(`${DRIVE_API}/${encodeURIComponent(id)}?alt=media&supportsAllDrives=true`);
+      return new Uint8Array(await res.arrayBuffer());
+    }
+    async function driveUpdate(id, bytes) {
+      await driveFetch(`${DRIVE_UPLOAD}/${encodeURIComponent(id)}?uploadType=media&supportsAllDrives=true`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/pdf' }, body: bytes
+      });
+    }
+    async function driveCreate(bytes, name, parentId) {
+      const meta = { name, mimeType: 'application/pdf' };
+      if (parentId) meta.parents = [parentId];
+      const body = new FormData();
+      body.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+      body.append('file', new Blob([bytes], { type: 'application/pdf' }));
+      const res = await driveFetch(`${DRIVE_UPLOAD}?uploadType=multipart&supportsAllDrives=true&fields=id,name`, { method: 'POST', body });
+      return res.json();
+    }
+
+    function openFromDrive(mode) {
+      const token = driveToken(); if (!token) return;
+      run('Google Drive', async () => {
+        await token;
+        const docs = await pickDrive({ multi: mode === 'add' });
+        if (!docs.length) return;
+        setStatus('Downloading from Google Drive…', 0);
+        const files = [], srcs = [];
+        for (const d of docs) {
+          files.push(new File([await driveDownload(d.id)], d.name, { type: 'application/pdf' }));
+          srcs.push({ type: 'drive', id: d.id, name: d.name, parentId: d.parentId });
+        }
+        if (mode === 'add') await addFiles(files, srcs);
+        else await loadDocument(files[0], srcs[0]);
+      });
+    }
+
+    function renderDriveStatus() {
+      const el = $('gdrive-status');
+      if (!driveConfigured) el.textContent = 'Not set up yet. Add your Google Cloud keys to config.js to turn it on (see README). On iPhone you can already reach Google Drive through Files if the Google Drive app is installed.';
+      else if (G.token && Date.now() < G.exp) el.textContent = 'Signed in. Observer can only see files you pick or save with it.';
+      else el.textContent = 'Ready. You\'ll sign in with Google the first time you open or save a file there.';
+      $('gdrive-signout').style.display = G.token ? 'block' : 'none';
+    }
+    $('gdrive-signout').onclick = () => {
+      if (G.token && window.google && google.accounts) google.accounts.oauth2.revoke(G.token, () => {});
+      G.token = null; G.exp = 0;
+      renderDriveStatus();
+      setStatus('Signed out of Google Drive');
+    };
+    if (!driveConfigured) ['start-gdrive', 'open-gdrive', 'save-gdrive-here', 'save-gdrive-folder'].forEach(id => $(id).classList.add('locked'));
 
     updateLock();
     renderIdStatus();
