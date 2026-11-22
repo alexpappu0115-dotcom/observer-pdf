@@ -1,0 +1,10 @@
+{
+  "name": "Observer PDF Studio",
+  "short_name": "Observer",
+  "description": "Local-first Acrobat alternative with OCR and certified digital signatures",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0c0d0f",
+  "theme_color": "#c6a36a",
+  "icons": []
+}
