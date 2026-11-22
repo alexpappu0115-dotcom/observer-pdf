@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Observer — PDF Studio</title>
   <link rel="manifest" href="manifest.json">
   <style>
@@ -14,149 +14,234 @@
       --dark-bg: #0c0d0f;
       --text: #eceae6;
       --panel: #1a1b1e;
+      --elev: #222326;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: Georgia, 'Times New Roman', serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       background: var(--dark-bg);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom);
     }
     header {
       background: var(--ink);
-      padding: 0.8rem 1.2rem;
+      padding: 0.9rem 1.2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 2px solid var(--brass);
+      border-bottom: 1px solid #2a2a2a;
       position: sticky;
       top: 0;
-      z-index: 50;
+      z-index: 100;
     }
-    .logo { font-size: 1.6rem; font-weight: bold; color: var(--brass); letter-spacing: 0.5px; }
-    .logo span { font-size: 0.75rem; color: var(--cream); margin-left: 0.5rem; font-weight: normal; }
-    .toolbar {
-      display: flex;
+    .logo {
+      font-family: Georgia, serif;
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--brass);
+      letter-spacing: -0.3px;
+    }
+    .logo span { font-size: 0.7rem; color: var(--cream); margin-left: 0.4rem; font-weight: 400; opacity: 0.8; }
+    .header-actions { display: flex; gap: 0.5rem; }
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--brass);
+      font-size: 1.2rem;
+      padding: 0.4rem;
+      cursor: pointer;
+    }
+
+    /* Bottom toolbar */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--ink);
+      border-top: 1px solid #2a2a2a;
+      padding: 0.6rem 0.8rem calc(0.6rem + env(safe-area-inset-bottom));
+      display: none;
       flex-wrap: wrap;
       gap: 0.4rem;
-      padding: 0.6rem 1rem;
-      background: #121314;
-      border-bottom: 1px solid #333;
-      position: sticky;
-      top: 52px;
-      z-index: 40;
+      justify-content: center;
+      z-index: 90;
     }
+    .bottom-bar.show { display: flex; }
+    .bottom-bar button, .bottom-bar .btn {
+      flex: 1 1 auto;
+      min-width: 64px;
+      padding: 0.55rem 0.4rem;
+      font-size: 0.78rem;
+      border-radius: 8px;
+    }
+
     button, .btn {
       background: var(--brass);
       color: var(--ink);
       border: none;
-      padding: 0.45rem 0.8rem;
+      padding: 0.5rem 0.9rem;
       font-family: inherit;
       font-weight: 600;
       font-size: 0.85rem;
       cursor: pointer;
-      border-radius: 5px;
+      border-radius: 8px;
     }
-    button.secondary { background: #2a2b2e; color: var(--text); }
+    button.secondary { background: var(--elev); color: var(--text); }
     button.danger { background: var(--clay); color: white; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:disabled { opacity: 0.45; }
+
     #dropzone {
       border: 2px dashed var(--brass);
-      border-radius: 10px;
-      margin: 1.5rem;
-      padding: 3rem 1rem;
+      border-radius: 16px;
+      margin: 2rem 1.2rem;
+      padding: 3.5rem 1.5rem;
       text-align: center;
-      background: rgba(198,163,106,0.06);
+      background: rgba(198,163,106,0.05);
+      cursor: pointer;
+      transition: background 0.2s;
     }
-    #workspace { display: none; flex: 1; flex-direction: column; }
+    #dropzone:active { background: rgba(198,163,106,0.12); }
+    #dropzone h2 { font-size: 1.3rem; margin-bottom: 0.4rem; color: var(--cream); }
+    #dropzone p { color: #aaa; font-size: 0.95rem; }
+
+    #workspace { display: none; flex: 1; flex-direction: column; padding-bottom: 80px; }
     #viewer-wrap {
       flex: 1;
       overflow: auto;
       display: flex;
       justify-content: center;
-      background: #111;
-      padding: 1rem;
+      background: #0a0a0a;
+      padding: 1rem 0.5rem;
       position: relative;
     }
-    #pdf-canvas { max-width: 100%; height: auto; box-shadow: 0 6px 30px rgba(0,0,0,0.6); background: white; }
+    #pdf-canvas { max-width: 100%; height: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.7); background: white; border-radius: 2px; }
     #draw-canvas {
       position: absolute;
       pointer-events: none;
       touch-action: none;
     }
     #draw-canvas.active { pointer-events: auto; cursor: crosshair; }
-    .panel {
+
+    .status-toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
       background: var(--panel);
-      margin: 0.5rem 1rem;
-      padding: 0.8rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      max-height: 180px;
+      color: var(--text);
+      padding: 0.7rem 1.2rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      max-width: 90%;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      z-index: 80;
+      display: none;
+    }
+    .ocr-panel {
+      background: var(--panel);
+      margin: 0.5rem 1rem 80px;
+      padding: 0.9rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      max-height: 200px;
       overflow: auto;
       white-space: pre-wrap;
-      font-family: ui-monospace, monospace;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      display: none;
     }
-    .page-controls { display: flex; align-items: center; gap: 0.5rem; }
-    footer { text-align: center; padding: 0.6rem; color: #666; font-size: 0.75rem; }
-    #sig-modal, #tools-modal {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-      z-index: 200; align-items: center; justify-content: center;
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.78);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
     }
-    #sig-modal.show, #tools-modal.show { display: flex; }
-    .modal { background: var(--ink); padding: 1.2rem; border-radius: 12px; border: 2px solid var(--brass); width: 92%; max-width: 480px; }
-    canvas#sig-pad { background: #fff; border-radius: 6px; width: 100%; height: 140px; touch-action: none; }
-    input, select { background: #2a2b2e; color: white; border: 1px solid var(--brass); padding: 0.5rem; border-radius: 4px; width: 100%; margin: 0.3rem 0; }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--ink);
+      width: 100%;
+      max-width: 520px;
+      border-radius: 20px 20px 0 0;
+      padding: 1.4rem 1.2rem 1.8rem;
+      border-top: 2px solid var(--brass);
+      max-height: 85vh;
+      overflow: auto;
+    }
+    .modal h3 { color: var(--brass); margin-bottom: 1rem; font-size: 1.15rem; }
+    canvas#sig-pad { background: #fff; border-radius: 8px; width: 100%; height: 150px; touch-action: none; margin: 0.5rem 0; }
+    input, select {
+      background: var(--elev);
+      color: white;
+      border: 1px solid #333;
+      padding: 0.65rem;
+      border-radius: 8px;
+      width: 100%;
+      margin: 0.35rem 0 0.8rem;
+      font-size: 1rem;
+    }
+    .settings-row { margin-bottom: 1rem; }
+    .settings-row label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 0.25rem; }
+    .page-info { font-size: 0.85rem; color: var(--brass); min-width: 50px; text-align: center; }
+
+    input[type="file"] { position: absolute; left: -9999px; }
   </style>
 </head>
 <body>
   <header>
-    <div class="logo">Observer <span>PDF Studio</span></div>
-    <div style="font-size:0.75rem; color:var(--brass);">Local · No Upload</div>
+    <div class="logo">Observer <span>PDF</span></div>
+    <div class="header-actions">
+      <button class="icon-btn" id="settings-btn" title="Settings">⚙</button>
+    </div>
   </header>
 
-  <div class="toolbar" id="toolbar" style="display:none;">
-    <button onclick="document.getElementById('file-input').click()">Open</button>
-    <button class="secondary" onclick="document.getElementById('multi-input').click()">Add Files</button>
-    <div class="page-controls">
-      <button class="secondary" id="prev">◀</button>
-      <span id="page-info">1 / 1</span>
-      <button class="secondary" id="next">▶</button>
-    </div>
-    <button class="secondary" id="ocr-btn">OCR</button>
-    <button class="secondary" id="draw-btn">Draw</button>
-    <button class="secondary" id="sign-btn">Sign</button>
-    <button class="secondary" id="tools-btn">Tools</button>
-    <button id="save-btn">Save PDF</button>
-  </div>
+  <input type="file" id="file-input" accept="application/pdf">
+  <input type="file" id="multi-input" accept="application/pdf" multiple>
 
-  <input type="file" id="file-input" accept="application/pdf" hidden>
-  <input type="file" id="multi-input" accept="application/pdf" multiple hidden>
-
-  <div id="dropzone">
-    <p style="font-size:1.2rem; margin-bottom:0.5rem;">Drop PDF(s) here</p>
-    <p style="color:#aaa; font-size:0.9rem;">or tap Open</p>
-    <p style="margin-top:1rem; font-size:0.8rem; color:var(--brass);">View · Highlight · Draw · OCR · Sign · Combine · Reorder</p>
-  </div>
+  <label id="dropzone" for="file-input">
+    <h2>Open a PDF</h2>
+    <p>Tap here or drop a file</p>
+    <p style="margin-top:0.8rem; font-size:0.8rem; color:var(--brass);">View · Draw · OCR · Sign · Combine</p>
+  </label>
 
   <div id="workspace">
     <div id="viewer-wrap">
       <canvas id="pdf-canvas"></canvas>
       <canvas id="draw-canvas"></canvas>
     </div>
-    <div id="status" class="panel" style="display:none;"></div>
-    <div id="ocr-output" class="panel" style="display:none;"></div>
+    <div id="ocr-output" class="ocr-panel"></div>
+  </div>
+
+  <div id="status" class="status-toast"></div>
+
+  <div class="bottom-bar" id="bottom-bar">
+    <label for="file-input" class="btn secondary">Open</label>
+    <label for="multi-input" class="btn secondary">Add</label>
+    <button class="secondary" id="prev">◀</button>
+    <span class="page-info" id="page-info">1 / 1</span>
+    <button class="secondary" id="next">▶</button>
+    <button class="secondary" id="ocr-btn">OCR</button>
+    <button class="secondary" id="draw-btn">Draw</button>
+    <button class="secondary" id="sign-btn">Sign</button>
+    <button class="secondary" id="tools-btn">Pages</button>
+    <button id="save-btn">Save</button>
   </div>
 
   <!-- Signature Modal -->
-  <div id="sig-modal">
+  <div id="sig-modal" class="modal-overlay">
     <div class="modal">
-      <h3 style="color:var(--brass); margin-bottom:0.6rem;">Signature</h3>
-      <canvas id="sig-pad" width="400" height="140"></canvas>
+      <h3>Signature</h3>
+      <canvas id="sig-pad" width="400" height="150"></canvas>
       <input type="text" id="signer-name" placeholder="Your name">
-      <div style="display:flex; gap:0.4rem; margin-top:0.8rem; flex-wrap:wrap;">
-        <button id="clear-sig">Clear</button>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+        <button id="clear-sig" class="secondary">Clear</button>
         <button id="apply-visual">Place Visual</button>
         <button id="apply-cert">Certified Sign</button>
         <button class="secondary" onclick="closeModal('sig-modal')">Cancel</button>
@@ -165,18 +250,40 @@
   </div>
 
   <!-- Tools Modal -->
-  <div id="tools-modal">
+  <div id="tools-modal" class="modal-overlay">
     <div class="modal">
-      <h3 style="color:var(--brass); margin-bottom:0.8rem;">Page Tools</h3>
-      <button class="secondary" style="width:100%; margin:0.3rem 0;" id="rotate-btn">Rotate Current Page 90°</button>
-      <button class="secondary" style="width:100%; margin:0.3rem 0;" id="delete-page-btn">Delete Current Page</button>
-      <button class="secondary" style="width:100%; margin:0.3rem 0;" id="combine-btn">Combine Loaded PDFs</button>
-      <p style="font-size:0.8rem; color:#aaa; margin:0.6rem 0;">Reorder: use page navigation then delete/insert as needed. Full drag-reorder coming in next update.</p>
-      <button class="secondary" onclick="closeModal('tools-modal')">Close</button>
+      <h3>Page Tools</h3>
+      <button class="secondary" style="width:100%; margin:0.4rem 0;" id="rotate-btn">Rotate Page 90°</button>
+      <button class="secondary" style="width:100%; margin:0.4rem 0;" id="delete-page-btn">Delete Page</button>
+      <button class="secondary" style="width:100%; margin:0.4rem 0;" id="combine-btn">Combine Loaded PDFs</button>
+      <p style="font-size:0.8rem; color:#888; margin:0.8rem 0;">Use Open/Add to load multiple files first.</p>
+      <button class="secondary" style="width:100%;" onclick="closeModal('tools-modal')">Close</button>
     </div>
   </div>
 
-  <footer>Observer · Local-first · OCR + Certified Signatures · No subscriptions</footer>
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal">
+      <h3>Settings</h3>
+      <div class="settings-row">
+        <label>Default signer name</label>
+        <input type="text" id="default-name" placeholder="Your name">
+      </div>
+      <div class="settings-row">
+        <label>OCR language</label>
+        <select id="ocr-lang">
+          <option value="eng">English</option>
+          <option value="spa">Spanish</option>
+          <option value="fra">French</option>
+          <option value="deu">German</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <p style="font-size:0.85rem; color:#aaa; line-height:1.4;">All processing happens on this device. Nothing is uploaded. Saved files go to your Files app.</p>
+      </div>
+      <button class="secondary" style="width:100%;" onclick="closeModal('settings-modal')">Done</button>
+    </div>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/tesseract.js@v5.0.4/dist/tesseract.min.js"></script>
@@ -188,15 +295,16 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
     let pdfDoc = null, currentPage = 1, totalPages = 0, pdfBytes = null, originalName = 'document.pdf';
-    let loadedPdfs = []; // for combine
+    let loadedPdfs = [];
     let drawingMode = false;
     let isDrawing = false, lastX = 0, lastY = 0;
+    let ocrLang = 'eng';
 
     const fileInput = document.getElementById('file-input');
     const multiInput = document.getElementById('multi-input');
     const dropzone = document.getElementById('dropzone');
     const workspace = document.getElementById('workspace');
-    const toolbar = document.getElementById('toolbar');
+    const bottomBar = document.getElementById('bottom-bar');
     const canvas = document.getElementById('pdf-canvas');
     const ctx = canvas.getContext('2d');
     const drawCanvas = document.getElementById('draw-canvas');
@@ -205,16 +313,31 @@
     const ocrOut = document.getElementById('ocr-output');
     const pageInfo = document.getElementById('page-info');
 
-    function setStatus(msg) {
-      statusEl.style.display = 'block';
+    // Load settings
+    const savedName = localStorage.getItem('observer-name');
+    if (savedName) document.getElementById('default-name').value = savedName;
+    const savedLang = localStorage.getItem('observer-ocr');
+    if (savedLang) { document.getElementById('ocr-lang').value = savedLang; ocrLang = savedLang; }
+
+    document.getElementById('default-name').onchange = e => localStorage.setItem('observer-name', e.target.value);
+    document.getElementById('ocr-lang').onchange = e => {
+      ocrLang = e.target.value;
+      localStorage.setItem('observer-ocr', ocrLang);
+    };
+
+    function setStatus(msg, timeout = 2500) {
       statusEl.textContent = msg;
+      statusEl.style.display = 'block';
+      clearTimeout(statusEl._t);
+      statusEl._t = setTimeout(() => statusEl.style.display = 'none', timeout);
     }
     function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
 
-    // File handling
+    document.getElementById('settings-btn').onclick = () => openModal('settings-modal');
+
     fileInput.onchange = e => loadPdf(e.target.files[0], true);
     multiInput.onchange = e => { for (let f of e.target.files) loadPdf(f, false); };
-    dropzone.onclick = () => fileInput.click();
     dropzone.ondragover = e => { e.preventDefault(); dropzone.style.background = 'rgba(198,163,106,0.15)'; };
     dropzone.ondragleave = () => dropzone.style.background = '';
     dropzone.ondrop = e => { e.preventDefault(); dropzone.style.background = ''; if (e.dataTransfer.files[0]) loadPdf(e.dataTransfer.files[0], true); };
@@ -228,60 +351,55 @@
         originalName = file.name;
       } else {
         loadedPdfs.push({ name: file.name, bytes });
-        setStatus(`Added ${file.name}. Total files: ${loadedPdfs.length}`);
+        setStatus(`Added ${file.name}`);
         return;
       }
-      setStatus('Loading...');
+      setStatus('Loading…');
       try {
         pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
         totalPages = pdfDoc.numPages;
         currentPage = 1;
         dropzone.style.display = 'none';
         workspace.style.display = 'flex';
-        toolbar.style.display = 'flex';
+        bottomBar.classList.add('show');
         await renderPage(currentPage);
-        setStatus(`Loaded ${originalName} (${totalPages} pages)`);
+        setStatus(`Loaded ${originalName}`);
       } catch (err) { setStatus('Load error: ' + err.message); }
     }
 
     async function renderPage(num) {
       const page = await pdfDoc.getPage(num);
-      const viewport = page.getViewport({ scale: Math.min(1.6, window.innerWidth / 600) });
+      const viewport = page.getViewport({ scale: Math.min(1.8, (window.innerWidth - 24) / 600) });
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       drawCanvas.width = viewport.width;
       drawCanvas.height = viewport.height;
-      drawCanvas.style.width = canvas.style.width = '100%';
-      drawCanvas.style.maxWidth = canvas.style.maxWidth = viewport.width + 'px';
       await page.render({ canvasContext: ctx, viewport }).promise;
       pageInfo.textContent = `${num} / ${totalPages}`;
-      // clear draw layer
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
     }
 
     document.getElementById('prev').onclick = async () => { if (currentPage > 1) { currentPage--; await renderPage(currentPage); } };
     document.getElementById('next').onclick = async () => { if (currentPage < totalPages) { currentPage++; await renderPage(currentPage); } };
 
-    // OCR
     document.getElementById('ocr-btn').onclick = async () => {
-      setStatus('OCR running...');
+      setStatus('Running OCR…', 0);
       ocrOut.style.display = 'block';
-      ocrOut.textContent = 'Processing...';
+      ocrOut.textContent = 'Processing…';
       try {
-        const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
-          logger: m => { if (m.status === 'recognizing text') setStatus(`OCR ${Math.round(m.progress*100)}%`); }
+        const { data: { text } } = await Tesseract.recognize(canvas, ocrLang, {
+          logger: m => { if (m.status === 'recognizing text') setStatus(`OCR ${Math.round(m.progress*100)}%`, 0); }
         });
         ocrOut.textContent = text || '(no text found)';
-        setStatus('OCR done');
-      } catch (e) { ocrOut.textContent = 'OCR failed: ' + e.message; }
+        setStatus('OCR complete');
+      } catch (e) { ocrOut.textContent = 'OCR failed: ' + e.message; setStatus('OCR error'); }
     };
 
-    // Draw mode
     document.getElementById('draw-btn').onclick = () => {
       drawingMode = !drawingMode;
       drawCanvas.classList.toggle('active', drawingMode);
-      document.getElementById('draw-btn').textContent = drawingMode ? 'Drawing ON' : 'Draw';
-      document.getElementById('draw-btn').style.background = drawingMode ? var('--clay') : '';
+      document.getElementById('draw-btn').textContent = drawingMode ? 'Drawing' : 'Draw';
+      document.getElementById('draw-btn').style.background = drawingMode ? 'var(--clay)' : '';
     };
     function getPos(e, c) {
       const r = c.getBoundingClientRect();
@@ -293,7 +411,7 @@
       if (!isDrawing || !drawingMode) return; e.preventDefault();
       const p = getPos(e, drawCanvas);
       drawCtx.strokeStyle = '#c6a36a';
-      drawCtx.lineWidth = 3;
+      drawCtx.lineWidth = 2.5;
       drawCtx.lineCap = 'round';
       drawCtx.beginPath();
       drawCtx.moveTo(lastX, lastY);
@@ -303,39 +421,40 @@
     };
     drawCanvas.onmouseup = drawCanvas.ontouchend = () => isDrawing = false;
 
-    // Signature
-    document.getElementById('sign-btn').onclick = () => document.getElementById('sig-modal').classList.add('show');
+    document.getElementById('sign-btn').onclick = () => {
+      const def = document.getElementById('default-name').value;
+      if (def) document.getElementById('signer-name').value = def;
+      openModal('sig-modal');
+    };
     const sigPad = document.getElementById('sig-pad');
     const sigCtx = sigPad.getContext('2d');
     let sigDrawing = false;
     sigPad.onmousedown = sigPad.ontouchstart = e => { e.preventDefault(); sigDrawing = true; const p = getPos(e, sigPad); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); };
-    sigPad.onmousemove = sigPad.ontouchmove = e => { if (!sigDrawing) return; e.preventDefault(); const p = getPos(e, sigPad); sigCtx.lineTo(p.x, p.y); sigCtx.strokeStyle = '#141311'; sigCtx.lineWidth = 2; sigCtx.stroke(); };
+    sigPad.onmousemove = sigPad.ontouchmove = e => { if (!sigDrawing) return; e.preventDefault(); const p = getPos(e, sigPad); sigCtx.lineTo(p.x, p.y); sigCtx.strokeStyle = '#141311'; sigCtx.lineWidth = 2.2; sigCtx.stroke(); };
     sigPad.onmouseup = sigPad.ontouchend = () => sigDrawing = false;
     document.getElementById('clear-sig').onclick = () => sigCtx.clearRect(0,0,sigPad.width,sigPad.height);
 
     document.getElementById('apply-visual').onclick = async () => {
-      // embed signature image via pdf-lib (simplified placement)
-      setStatus('Placing visual signature...');
+      setStatus('Placing signature…');
       try {
         const pdfLibDoc = await PDFLib.PDFDocument.load(pdfBytes);
         const sigDataUrl = sigPad.toDataURL('image/png');
         const sigImage = await pdfLibDoc.embedPng(sigDataUrl);
         const page = pdfLibDoc.getPages()[currentPage - 1];
-        const { width, height } = page.getSize();
-        page.drawImage(sigImage, { x: width - 200, y: 40, width: 160, height: 50 });
+        const { width } = page.getSize();
+        page.drawImage(sigImage, { x: width - 200, y: 50, width: 160, height: 55 });
         pdfBytes = await pdfLibDoc.save();
         pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
         await renderPage(currentPage);
-        setStatus('Visual signature placed. Save when ready.');
+        setStatus('Signature placed');
         closeModal('sig-modal');
-      } catch (e) { setStatus('Visual sign error: ' + e.message); }
+      } catch (e) { setStatus('Error: ' + e.message); }
     };
 
     document.getElementById('apply-cert').onclick = async () => {
       const name = document.getElementById('signer-name').value.trim() || 'Observer User';
-      setStatus('Generating certified signature...');
+      setStatus('Signing…', 0);
       try {
-        // Generate self-signed cert
         const keys = forge.pki.rsa.generateKeyPair(2048);
         const cert = forge.pki.createCertificate();
         cert.publicKey = keys.publicKey;
@@ -348,14 +467,11 @@
         cert.setIssuer(attrs);
         cert.sign(keys.privateKey, forge.md.sha256.create());
 
-        // Build P12 as a fresh ArrayBuffer (avoid detached buffer issues)
         const p12Asn1 = forge.pkcs12.toPkcs12Asn1(keys.privateKey, cert, 'observer', { algorithm: '3des' });
         const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
         const p12Buf = new Uint8Array(p12Der.length);
         for (let i = 0; i < p12Der.length; i++) p12Buf[i] = p12Der.charCodeAt(i);
-        const p12Copy = p12Buf.slice().buffer; // fresh copy
-
-        // Clone pdfBytes so it is not detached by previous pdf.js loads
+        const p12Copy = p12Buf.slice().buffer;
         const pdfCopy = pdfBytes.slice(0);
 
         const signer = new Zga.PdfSigner({
@@ -368,21 +484,19 @@
         });
 
         const signed = await signer.sign(pdfCopy);
-        // Ensure we store a usable ArrayBuffer
         pdfBytes = signed instanceof Uint8Array ? signed.buffer.slice(signed.byteOffset, signed.byteOffset + signed.byteLength) : signed.slice(0);
 
         pdfDoc = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
         await renderPage(currentPage);
-        setStatus(`Certified signature applied for ${name}. Use Save to download.`);
+        setStatus(`Certified signature applied`);
         closeModal('sig-modal');
       } catch (e) {
         console.error(e);
-        setStatus('Cert sign error: ' + e.message);
+        setStatus('Sign error: ' + e.message);
       }
     };
 
-    // Tools
-    document.getElementById('tools-btn').onclick = () => document.getElementById('tools-modal').classList.add('show');
+    document.getElementById('tools-btn').onclick = () => openModal('tools-modal');
     document.getElementById('rotate-btn').onclick = async () => {
       try {
         const doc = await PDFLib.PDFDocument.load(pdfBytes);
@@ -393,10 +507,10 @@
         await renderPage(currentPage);
         setStatus('Page rotated');
         closeModal('tools-modal');
-      } catch (e) { setStatus('Rotate error: ' + e.message); }
+      } catch (e) { setStatus('Error: ' + e.message); }
     };
     document.getElementById('delete-page-btn').onclick = async () => {
-      if (totalPages <= 1) { setStatus('Cannot delete the only page'); return; }
+      if (totalPages <= 1) { setStatus('Cannot delete last page'); return; }
       try {
         const doc = await PDFLib.PDFDocument.load(pdfBytes);
         doc.removePage(currentPage - 1);
@@ -407,11 +521,11 @@
         await renderPage(currentPage);
         setStatus('Page deleted');
         closeModal('tools-modal');
-      } catch (e) { setStatus('Delete error: ' + e.message); }
+      } catch (e) { setStatus('Error: ' + e.message); }
     };
     document.getElementById('combine-btn').onclick = async () => {
-      if (loadedPdfs.length < 2) { setStatus('Load at least 2 PDFs first (use Add Files)'); return; }
-      setStatus('Combining...');
+      if (loadedPdfs.length < 2) { setStatus('Add at least 2 PDFs first'); return; }
+      setStatus('Combining…');
       try {
         const merged = await PDFLib.PDFDocument.create();
         for (const item of loadedPdfs) {
@@ -425,20 +539,23 @@
         totalPages = pdfDoc.numPages;
         currentPage = 1;
         await renderPage(1);
-        setStatus(`Combined ${loadedPdfs.length} files → ${totalPages} pages`);
+        setStatus(`Combined ${loadedPdfs.length} files`);
         closeModal('tools-modal');
       } catch (e) { setStatus('Combine error: ' + e.message); }
     };
 
-    // Save
     document.getElementById('save-btn').onclick = () => {
       if (!pdfBytes) return;
-      const blob = new Blob([pdfBytes.slice(0)], { type: 'application/pdf' });
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = originalName.replace(/\.pdf$/i, '') + '_observer.pdf';
+      a.href = url;
+      a.download = originalName.replace(/\.pdf$/i, '') + '-observer.pdf';
+      document.body.appendChild(a);
       a.click();
-      setStatus('Saved');
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus('Saved to Files');
     };
   </script>
 </body>
