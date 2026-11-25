@@ -395,6 +395,11 @@
       .icon-btn { padding: 0.35rem 0.35rem; }
     }
     .start-actions { display: flex; gap: 0.6rem; margin: -1rem 1.2rem 1rem; }
+    .steps { margin: 0.2rem 0 0.8rem 1.2rem; line-height: 1.5; font-size: 0.92rem; color: var(--text); }
+    .steps li { margin: 0.35rem 0; }
+    .steps b { color: var(--cream); }
+    .check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #aaa; margin: 0.4rem 0 0.9rem; }
+    .check input { width: auto; margin: 0; }
     .start-actions button { flex: 1; padding: 0.8rem 0.5rem; }
   </style>
 </head>
@@ -523,6 +528,19 @@
     <button id="save-btn">Save</button>
   </div>
 
+  <!-- Google Drive through the device (no sign-in needed) -->
+  <div id="gdrive-help-modal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="gh-title">Open from Google Drive</h3>
+      <ol id="gh-steps" class="steps"></ol>
+      <label class="check"><input type="checkbox" id="gh-skip"> Don't show this again</label>
+      <div class="row-buttons">
+        <button class="secondary" data-close="gdrive-help-modal">Cancel</button>
+        <button id="gh-go">Choose from Google Drive</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Go to page -->
   <div id="goto-modal" class="modal-overlay">
     <div class="modal">
@@ -570,8 +588,8 @@
     <div class="modal">
       <h3 id="open-title">Open a PDF</h3>
       <button class="sheet-btn" id="open-files"><span class="ico">📁</span><span>Files / iCloud Drive<small>Your device, iCloud Drive, and any cloud app shown in Files</small></span></button>
-      <button class="sheet-btn" id="open-gdrive"><span class="ico">△</span><span>Google Drive<small>Sign in with Google and pick a file</small></span></button>
-      <p class="note">On iPhone, Files also lists Google Drive, Dropbox and OneDrive if their apps are installed and turned on under Files → Browse → ⋯ → Edit.</p>
+      <button class="sheet-btn" id="open-gdrive"><span class="ico">△</span><span>Google Drive<small id="open-gdrive-hint">Sign in with Google and pick a file</small></span></button>
+      <p class="note">Dropbox, OneDrive and Box work the same way through Files when their apps are installed.</p>
       <button class="secondary" style="width:100%;" data-close="open-modal">Cancel</button>
     </div>
   </div>
@@ -585,7 +603,8 @@
       <input type="text" id="save-name" autocomplete="off" spellcheck="false">
       <button class="sheet-btn primary" id="save-original"><span class="ico">↺</span><span id="save-original-label">Save over original</span></button>
       <button class="sheet-btn" id="save-files"><span class="ico">📁</span><span>Save to Files / iCloud Drive<small id="save-files-hint">Choose iCloud Drive or another location</small></span></button>
-      <div class="sheet-btn" style="cursor:default; flex-wrap:wrap;">
+      <button class="sheet-btn" id="save-gdrive-sys"><span class="ico">△</span><span>Save to Google Drive<small id="save-gdrive-hint"></small></span></button>
+      <div class="sheet-btn" id="save-gdrive-api" style="cursor:default; flex-wrap:wrap;">
         <span class="ico">△</span><span style="flex:1;">Save copy to Google Drive</span>
         <div class="sheet-row" style="width:100%;">
           <button class="secondary" id="save-gdrive-here">My Drive</button>
@@ -645,8 +664,10 @@
         <button class="secondary" id="remove-id">Remove imported</button>
       </div>
 
-      <h4>Google account</h4>
-      <button class="secondary" id="settings-google" style="width:100%;">Manage Google sign-in</button>
+      <div id="settings-google-wrap">
+        <h4>Google account</h4>
+        <button class="secondary" id="settings-google" style="width:100%;">Manage Google sign-in</button>
+      </div>
 
       <div class="settings-row" style="margin-top:1rem;">
         <p class="note">All processing happens on this device. Files only leave it when you save to Google Drive, and then they go straight to your Google account. Observer can only see files you pick or create with it. OCR downloads its engine and language data the first time you use it.</p>
@@ -1986,6 +2007,9 @@
       $('save-source').textContent = source.type === 'drive' ? `Opened from Google Drive: ${source.name}`
         : source.type === 'handle' ? `Opened from your computer: ${source.handle.name}` : '';
       $('save-gdrive-here').textContent = source.type === 'drive' && source.parentId ? 'Same folder' : 'My Drive';
+      $('save-gdrive-api').style.display = driveConfigured ? 'flex' : 'none';
+      $('save-gdrive-sys').style.display = driveConfigured ? 'none' : 'flex';
+      $('save-gdrive-hint').textContent = gdriveSaveHint();
       const probe = new File([new Uint8Array(1)], 'x.pdf', { type: 'application/pdf' });
       $('save-files-hint').textContent = window.showSaveFilePicker ? 'Choose any folder, including iCloud Drive'
         : shareTarget(probe) ? 'Opens the share sheet: tap Save to Files, then iCloud Drive'
@@ -1994,7 +2018,7 @@
       if (driveConfigured) gPreload().catch(() => {});
     });
 
-    $('save-files').onclick = async () => {
+    const saveToSystem = async () => {
       const name = outName();
       const file = new File([pdfBytes], name, { type: 'application/pdf' });
       try {
@@ -2013,10 +2037,12 @@
         }
       } catch (e) {
         if (e.name === 'AbortError') return;
-        if (e.name === 'NotAllowedError') { setStatus('Tap "Save to Files" again', 3000); return; }
+        if (e.name === 'NotAllowedError') { setStatus('Tap the save button again', 3000); return; }
         setStatus('Save error: ' + e.message, 4000);
       }
     };
+    $('save-files').onclick = saveToSystem;
+    $('save-gdrive-sys').onclick = saveToSystem;
     $('save-download').onclick = () => { const name = outName(); download(pdfBytes, name); savedOk(`Downloaded ${name}`); };
 
     $('save-original').onclick = () => {
@@ -2216,12 +2242,16 @@
       gPreload().catch(e => setStatus('Could not reach Google: ' + e.message, 5000));
       if (signedIn()) loadRecent();
     }
-    function openFromDrive(mode) { showGoogleSheet(mode); }
+    function openFromDrive(mode) {
+      if (driveConfigured) { showGoogleSheet(mode); return; }
+      if (store.get('observer-gdrive-help-skip') === '1') { openFromFiles(mode); return; }
+      showDriveHelp(mode);
+    }
     $('account-btn').onclick = () => showGoogleSheet('account');
 
     function renderAccount() {
       const btn = $('account-btn');
-      btn.classList.toggle('locked', !driveConfigured);
+      btn.style.display = driveConfigured ? '' : 'none';
       btn.textContent = '';
       if (G.user) {
         const a = document.createElement('span');
@@ -2315,7 +2345,65 @@
     };
     $('settings-google').onclick = () => { closeModal('settings-modal'); showGoogleSheet('account'); };
     renderAccount();
-    if (!driveConfigured) ['start-gdrive', 'open-gdrive', 'save-gdrive-here', 'save-gdrive-folder'].forEach(id => $(id).classList.add('locked'));
+    // ---- Google Drive through the device (works like iCloud Drive; no Google sign-in needed) ----
+    // iPhone/iPad: the Google Drive app appears in the Files picker and the share sheet.
+    // Android: Drive is a source in the system file picker and a share target.
+    // Mac/Windows: Google Drive for desktop shows up as a folder/drive the file windows can open and save to.
+    const PLATFORM = (() => {
+      const ua = navigator.userAgent;
+      if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios';
+      if (/Android/.test(ua)) return 'android';
+      if (/Windows/.test(ua)) return 'windows';
+      if (/Macintosh/.test(ua)) return 'mac';
+      return 'other';
+    })();
+    function gdriveOpenSteps() {
+      switch (PLATFORM) {
+        case 'ios': return [
+          'Tap <b>Choose from Google Drive</b>.',
+          'In the Files window, tap <b>Browse</b>, then <b>Google Drive</b>, and pick your PDF.',
+          'Don\'t see Google Drive? Install the free Google Drive app, then in Files tap <b>Browse → ⋯ → Edit</b> and turn on Google Drive.'];
+        case 'android': return [
+          'Tap <b>Choose from Google Drive</b>.',
+          'In the file picker, open the menu (☰) and choose <b>Drive</b>, then pick your PDF.',
+          'Drive comes with most Android phones. If it\'s missing, install the Google Drive app.'];
+        case 'windows': return [
+          'Tap <b>Choose from Google Drive</b>.',
+          'In the file window, open the <b>Google Drive</b> drive (usually G:) and pick your PDF.',
+          'This needs <b>Google Drive for desktop</b>. In Chrome or Edge, “Save over original” then saves straight back to Drive.'];
+        case 'mac': return [
+          'Tap <b>Choose from Google Drive</b>.',
+          'In the file window, choose <b>Google Drive</b> in the sidebar under Locations and pick your PDF.',
+          'This needs <b>Google Drive for desktop</b>. In Chrome or Edge, “Save over original” then saves straight back to Drive.'];
+        default: return [
+          'Tap <b>Choose from Google Drive</b> and pick the PDF from your Google Drive folder (Google Drive for desktop).',
+          'Or download the PDF from drive.google.com and open it here.'];
+      }
+    }
+    function gdriveSaveHint() {
+      if (window.showSaveFilePicker) return 'Pick your Google Drive folder (Google Drive for desktop)';
+      if (PLATFORM === 'ios') return 'Share sheet: Save to Files, then Google Drive';
+      if (PLATFORM === 'android') return 'Share sheet: choose Drive';
+      return 'Downloads the file; move it into your Google Drive folder';
+    }
+    let ghMode = 'open';
+    function showDriveHelp(mode) {
+      ghMode = mode;
+      $('gh-title').textContent = mode === 'add' ? 'Add from Google Drive' : 'Open from Google Drive';
+      $('gh-steps').innerHTML = gdriveOpenSteps().map(t => `<li>${t}</li>`).join('');  // static text only
+      $('gh-skip').checked = false;
+      openModal('gdrive-help-modal');
+    }
+    $('gh-go').onclick = () => {
+      if ($('gh-skip').checked) store.set('observer-gdrive-help-skip', '1');
+      closeModal('gdrive-help-modal');
+      openFromFiles(ghMode);   // straight from the tap, so the system picker is allowed to open
+    };
+    if (!driveConfigured) {
+      $('open-gdrive-hint').textContent = PLATFORM === 'ios' || PLATFORM === 'android'
+        ? 'Through the Google Drive app, no sign-in needed' : 'Through Google Drive for desktop, no sign-in needed';
+      $('settings-google-wrap').style.display = 'none';
+    }
 
     updateLock();
     renderIdStatus();

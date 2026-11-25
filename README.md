@@ -17,7 +17,8 @@ Local-first PDF studio aiming to replace Adobe Acrobat and DocuSign. Everything 
   - Multiple signers: the first signature certifies the document while still allowing later signatures, which are added as incremental updates, so earlier signatures stay valid
   - Signed documents are locked against edits that would break the signature
 - **iCloud Drive & Files**: Open uses the system file picker (iCloud Drive, On My iPhone, and any cloud app shown in Files). On iPhone/iPad, Save → "Save to Files" opens the share sheet so you can pick iCloud Drive. On desktop Chrome/Edge you can save straight back over the file you opened (works with your iCloud Drive folder on Mac/Windows)
-- **Sign in with Google + Google Drive**: one-tap sign-in, recent Drive files, open PDFs from Drive, update the original (Drive keeps the previous version), or save a copy to My Drive or any folder. Needs a one-time setup by the site owner, below
+- **Google Drive, no sign-in needed**: works just like iCloud Drive, through your device. On iPhone/iPad the Google Drive app shows up in the Files picker and the share sheet; on Android, Drive is in the system file picker and share sheet; on Mac/Windows, Google Drive for desktop appears as a folder you can open from and save to (in Chrome/Edge, "Save over original" writes straight back to Drive). The Google Drive button shows short instructions for your device
+- **Optional direct Google sign-in**: if you add a Google OAuth Client ID to `config.js`, Observer also offers Sign in with Google, recent Drive files, the Google Picker and saving back to Drive from any browser. See setup below
 - **OCR** the current page (Tesseract.js, on-device)
 - Rotate / delete pages, combine multiple PDFs (your edits to the current file are kept)
 - Works offline after the first visit (service worker); installable on iPhone via Add to Home Screen
@@ -32,7 +33,9 @@ python3 -m http.server 8000
 ```
 Then open `http://[your-ip]:8000` on the phone (same Wi-Fi). The service worker needs HTTPS or localhost, so offline mode works on GitHub Pages but not over a plain LAN IP.
 
-## Google sign-in setup (one time, about 5 minutes)
+## Optional: direct Google sign-in setup (one time, about 5 minutes)
+Not needed for Google Drive through your device (above). Only set this up if you want Observer's own Sign in with Google.
+
 Your users never deal with keys: they tap **Sign in with Google**. But Google requires every website that offers Google sign-in or Drive access to be registered once, by the site owner. That gives you one value, the **Client ID**, which goes in `config.js`.
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create a project (e.g. "Observer").
