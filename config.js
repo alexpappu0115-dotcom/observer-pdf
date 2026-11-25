@@ -1,12 +1,11 @@
 // Observer configuration.
 //
-// Google Drive: fill in the three values below to turn on "Open from / Save to Google Drive".
-// They are not secrets (they are visible to anyone who loads the page), but restrict them
-// in Google Cloud Console to your site's address. Step-by-step setup is in README.md.
+// Sign in with Google + Google Drive: paste your OAuth Client ID below (one-time setup,
+// see "Google sign-in setup" in README.md). Your users never see or need this value;
+// they just tap "Sign in with Google". It is not a secret.
 window.OBSERVER_CONFIG = {
   google: {
-    clientId: '', // OAuth client ID, e.g. 1234567890-abc123.apps.googleusercontent.com
-    apiKey: '',   // API key, e.g. AIzaSy...
-    appId: ''     // Google Cloud project NUMBER, e.g. 1234567890
+    clientId: '', // e.g. 1234567890-abc123def456.apps.googleusercontent.com
+    apiKey: ''    // optional: only add one if "Browse Google Drive" shows an API key error
   }
 };

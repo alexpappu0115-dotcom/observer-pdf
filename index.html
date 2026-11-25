@@ -283,6 +283,32 @@
     .sheet-row > button { flex: 1; background: #34353a; margin-top: 0.5rem; }
     .source-line { font-size: 0.8rem; color: #aaa; margin: -0.4rem 0 0.6rem; }
     #start { display: block; }
+    .account-btn {
+      background: transparent; color: var(--brass); border: 1px solid #4a3f2c;
+      padding: 0.3rem 0.65rem; font-size: 0.78rem; border-radius: 16px; white-space: nowrap;
+    }
+    .account-btn.has-avatar { border: none; padding: 0.1rem; }
+    .avatar {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #3a3326; color: var(--cream); font-size: 0.85rem; font-weight: 700;
+      border: 2px solid #5a5a5a;
+    }
+    .avatar.on { border-color: var(--brass); }
+    .avatar.big { width: 42px; height: 42px; font-size: 1.1rem; flex-shrink: 0; }
+    .g-user { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.8rem; }
+    .g-user:empty { display: none; }
+    .g-list { max-height: 38vh; overflow: auto; font-size: 0.85rem; color: #aaa; }
+    .g-item {
+      display: block; width: 100%; text-align: left; margin: 0.3rem 0; padding: 0.6rem 0.8rem;
+      background: var(--elev); color: var(--text); font-weight: 500; word-break: break-word;
+    }
+    .g-item small { display: block; color: #999; font-weight: 400; font-size: 0.72rem; margin-top: 0.1rem; }
+    @media (max-width: 420px) {
+      .logo span { display: none; }
+      #zoom-label { min-width: 40px; padding: 0.3rem 0.2rem; }
+      .icon-btn { padding: 0.35rem 0.35rem; }
+    }
     .start-actions { display: flex; gap: 0.6rem; margin: -1rem 1.2rem 1rem; }
     .start-actions button { flex: 1; padding: 0.8rem 0.5rem; }
   </style>
@@ -296,6 +322,7 @@
         <button id="zoom-label" title="Fit to width">100%</button>
         <button class="icon-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
       </div>
+      <button class="account-btn" id="account-btn" title="Sign in with Google">Sign in</button>
       <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
     </div>
   </header>
@@ -426,6 +453,25 @@
     </div>
   </div>
 
+  <!-- Google account / Drive Modal -->
+  <div id="google-modal" class="modal-overlay">
+    <div class="modal">
+      <h3 id="g-title">Google account</h3>
+      <div id="g-user" class="g-user"></div>
+      <button class="sheet-btn primary" id="g-signin"><span class="ico">G</span><span id="g-signin-label">Sign in with Google</span></button>
+      <div id="g-drive" style="display:none;">
+        <h4>Recent in Google Drive</h4>
+        <div id="g-recent" class="g-list"></div>
+        <button class="sheet-btn" id="g-browse"><span class="ico">△</span><span>Browse Google Drive…<small>Pick any PDF in your Drive</small></span></button>
+      </div>
+      <p class="note" id="g-note"></p>
+      <div class="row-buttons" style="margin-top:0.6rem;">
+        <button class="secondary" id="g-signout">Sign out</button>
+        <button class="secondary" data-close="google-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Settings Modal -->
   <div id="settings-modal" class="modal-overlay">
     <div class="modal">
@@ -455,9 +501,8 @@
         <button class="secondary" id="remove-id">Remove imported</button>
       </div>
 
-      <h4>Google Drive</h4>
-      <div id="gdrive-status" class="note"></div>
-      <button class="secondary" id="gdrive-signout" style="width:100%; display:none;">Sign out of Google Drive</button>
+      <h4>Google account</h4>
+      <button class="secondary" id="settings-google" style="width:100%;">Manage Google sign-in</button>
 
       <div class="settings-row" style="margin-top:1rem;">
         <p class="note">All processing happens on this device. Files only leave it when you save to Google Drive, and then they go straight to your Google account. Observer can only see files you pick or create with it. OCR downloads its engine and language data the first time you use it.</p>
@@ -554,7 +599,7 @@
     $('unlock-btn').onclick = () => { signed = false; updateLock(); setStatus('Unlocked. Saving edits will invalidate the existing signature.', 4000); };
 
     // ---------- Opening files ----------
-    $('settings-btn').onclick = () => { renderIdStatus(); renderDriveStatus(); openModal('settings-modal'); };
+    $('settings-btn').onclick = () => { renderIdStatus(); openModal('settings-modal'); };
     const isPdf = f => f && (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name));
     const PDF_TYPES = [{ description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } }];
 
@@ -1250,15 +1295,23 @@
       });
     };
 
-    // ---------- Google Drive ----------
-    // Uses Google sign-in (token in memory only) with the drive.file scope: Observer can only
-    // see files the user picks in the Google Picker or creates with Observer.
+    // ---------- Google account (Sign in with Google) & Drive ----------
+    // Only one value is needed in config.js: the OAuth Client ID. The Drive app ID is the
+    // project number at the start of the Client ID, and the API key is optional (Picker only).
+    // Scopes: basic profile + drive.file, so Observer only sees files you pick or create with it.
+    // The access token lives in memory only; the remembered account (name/email) is in localStorage.
     const GCFG = (window.OBSERVER_CONFIG && window.OBSERVER_CONFIG.google) || {};
-    const driveConfigured = !!(GCFG.clientId && GCFG.apiKey && GCFG.appId);
+    const GCLIENT = String(GCFG.clientId || '').trim();
+    const GAPP_ID = String(GCFG.appId || (GCLIENT.match(/^(\d+)-/) || [])[1] || '');
+    const driveConfigured = /\.apps\.googleusercontent\.com$/.test(GCLIENT);
     const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+    const SIGNIN_SCOPES = `openid email profile ${DRIVE_SCOPE}`;
     const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
     const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
-    const G = { client: null, token: null, exp: 0, loading: null, onToken: null, onError: null };
+    const NOT_SET_UP = 'Google sign-in isn\'t set up yet: add your Google Client ID to config.js (see README).';
+    const G = { client: null, token: null, exp: 0, loading: null, onToken: null, onError: null, user: null };
+    try { G.user = JSON.parse(store.get('observer-google-user') || 'null'); } catch {}
+    const signedIn = () => !!(G.token && Date.now() < G.exp - 60000);
 
     function gPreload() {
       if (!G.loading) {
@@ -1272,8 +1325,8 @@
             timeout: 15000, ontimeout: () => rej(new Error('Google Picker timed out'))
           }));
           G.client = google.accounts.oauth2.initTokenClient({
-            client_id: GCFG.clientId,
-            scope: DRIVE_SCOPE,
+            client_id: GCLIENT,
+            scope: SIGNIN_SCOPES,
             callback: r => G.onToken && G.onToken(r),
             error_callback: e => G.onError && G.onError(e)
           });
@@ -1282,34 +1335,43 @@
       return G.loading;
     }
 
-    // Returns a promise for an access token, or null if Drive can't be used yet.
-    // Call it synchronously from a tap: it may open Google's sign-in popup.
+    async function loadProfile() {
+      try {
+        const u = await (await driveFetch('https://www.googleapis.com/oauth2/v3/userinfo')).json();
+        G.user = { name: u.name || u.email || 'Google user', email: u.email || '' };
+        store.set('observer-google-user', JSON.stringify(G.user));
+      } catch {}
+    }
+
+    // Signs in if needed and returns a promise for an access token, or null if Google can't be
+    // used yet. Call it synchronously from a tap: it may open Google's sign-in popup. Returning
+    // users get a one-tap popup that closes itself, because we pass their email as a hint.
     function driveToken() {
-      if (!driveConfigured) {
-        setStatus('Google Drive isn\'t set up yet: add your Google keys to config.js (see README).', 6000);
-        return null;
-      }
+      if (!driveConfigured) { setStatus(NOT_SET_UP, 6000); return null; }
       if (!G.client) {
         setStatus('Connecting to Google…', 0);
         gPreload().then(() => setStatus('Connected to Google. Tap again to continue.', 4000),
                         e => setStatus('Could not reach Google: ' + e.message, 5000));
         return null;
       }
-      if (G.token && Date.now() < G.exp - 60000) return Promise.resolve(G.token);
+      if (signedIn()) return Promise.resolve(G.token);
       const p = new Promise((resolve, reject) => {
         G.onToken = r => {
           if (r.error) return reject(new Error(r.error_description || r.error));
-          if (!google.accounts.oauth2.hasGrantedAllScopes(r, DRIVE_SCOPE)) return reject(new Error('Google Drive access was not granted'));
+          if (!google.accounts.oauth2.hasGrantedAllScopes(r, DRIVE_SCOPE)) {
+            return reject(new Error('Google Drive access wasn\'t allowed. Sign in again and tick the Google Drive box'));
+          }
           G.token = r.access_token;
           G.exp = Date.now() + (Number(r.expires_in) || 3600) * 1000;
-          renderDriveStatus();
-          resolve(G.token);
+          loadProfile().finally(() => { renderAccount(); resolve(G.token); });
         };
         G.onError = e => reject(new Error(
           e && e.type === 'popup_closed' ? 'Google sign-in was closed'
-          : e && e.type === 'popup_failed_to_open' ? 'allow pop-ups for this site to sign in to Google'
+          : e && e.type === 'popup_failed_to_open' ? 'allow pop-ups for this site to sign in with Google'
           : 'Google sign-in failed'));
-        G.client.requestAccessToken({ prompt: '' });
+        const opts = { prompt: '' };
+        if (G.user && G.user.email) opts.hint = G.user.email;
+        G.client.requestAccessToken(opts);
       });
       p.catch(() => {});
       return p;
@@ -1324,8 +1386,6 @@
         const builder = new P.PickerBuilder()
           .addView(view)
           .setOAuthToken(G.token)
-          .setDeveloperKey(GCFG.apiKey)
-          .setAppId(GCFG.appId)
           .setTitle(folder ? 'Choose a folder' : multi ? 'Choose PDFs' : 'Choose a PDF')
           .enableFeature(P.Feature.SUPPORT_DRIVES)
           .setCallback(d => {
@@ -1333,6 +1393,8 @@
             if (action === P.Action.PICKED) resolve(d[P.Response.DOCUMENTS].map(x => ({ id: x[P.Document.ID], name: x[P.Document.NAME], parentId: x[P.Document.PARENT_ID] || null })));
             else if (action === P.Action.CANCEL) resolve([]);
           });
+        if (GCFG.apiKey) builder.setDeveloperKey(GCFG.apiKey);
+        if (GAPP_ID) builder.setAppId(GAPP_ID);
         if (multi) builder.enableFeature(P.Feature.MULTISELECT_ENABLED);
         builder.build().setVisible(true);
       });
@@ -1343,7 +1405,7 @@
       if (!res.ok) {
         let msg = `HTTP ${res.status}`;
         try { const j = await res.json(); if (j.error && j.error.message) msg = j.error.message; } catch {}
-        if (res.status === 401) { G.token = null; msg = 'Google session expired, tap again to sign in'; }
+        if (res.status === 401) { G.token = null; renderAccount(); msg = 'Google session expired, tap again to sign in'; }
         throw new Error(msg);
       }
       return res;
@@ -1366,37 +1428,123 @@
       const res = await driveFetch(`${DRIVE_UPLOAD}?uploadType=multipart&supportsAllDrives=true&fields=id,name`, { method: 'POST', body });
       return res.json();
     }
+    // PDFs Observer can see: ones you opened or saved with it (drive.file scope)
+    async function driveRecent() {
+      const q = encodeURIComponent("mimeType='application/pdf' and trashed=false");
+      const res = await driveFetch(`${DRIVE_API}?q=${q}&orderBy=modifiedTime%20desc&pageSize=15&fields=files(id,name,modifiedTime,parents)&supportsAllDrives=true&includeItemsFromAllDrives=true`);
+      return (await res.json()).files || [];
+    }
 
-    function openFromDrive(mode) {
-      const token = driveToken(); if (!token) return;
-      run('Google Drive', async () => {
-        await token;
-        const docs = await pickDrive({ multi: mode === 'add' });
-        if (!docs.length) return;
-        setStatus('Downloading from Google Drive…', 0);
-        const files = [], srcs = [];
-        for (const d of docs) {
-          files.push(new File([await driveDownload(d.id)], d.name, { type: 'application/pdf' }));
-          srcs.push({ type: 'drive', id: d.id, name: d.name, parentId: d.parentId });
+    // ---- Account / Drive sheet ----
+    let gMode = 'account';  // 'open' | 'add' | 'account'
+    function showGoogleSheet(mode = 'account') {
+      if (!driveConfigured) { setStatus(NOT_SET_UP, 6000); return; }
+      gMode = mode;
+      $('g-title').textContent = mode === 'add' ? 'Add from Google Drive' : mode === 'open' ? 'Open from Google Drive' : 'Google account';
+      renderAccount();
+      openModal('google-modal');
+      gPreload().catch(e => setStatus('Could not reach Google: ' + e.message, 5000));
+      if (signedIn()) loadRecent();
+    }
+    function openFromDrive(mode) { showGoogleSheet(mode); }
+    $('account-btn').onclick = () => showGoogleSheet('account');
+
+    function renderAccount() {
+      const btn = $('account-btn');
+      btn.classList.toggle('locked', !driveConfigured);
+      btn.textContent = '';
+      if (G.user) {
+        const a = document.createElement('span');
+        a.className = 'avatar' + (signedIn() ? ' on' : '');
+        a.textContent = (G.user.name || G.user.email || '?').trim().charAt(0).toUpperCase();
+        btn.appendChild(a);
+        btn.classList.add('has-avatar');
+        btn.title = `${G.user.name}${G.user.email ? ' (' + G.user.email + ')' : ''}`;
+      } else {
+        btn.textContent = 'Sign in';
+        btn.classList.remove('has-avatar');
+        btn.title = 'Sign in with Google';
+      }
+      const u = $('g-user');
+      u.textContent = '';
+      if (G.user) {
+        const a = document.createElement('span');
+        a.className = 'avatar big' + (signedIn() ? ' on' : '');
+        a.textContent = (G.user.name || '?').charAt(0).toUpperCase();
+        const t = document.createElement('div');
+        const n = document.createElement('div'); n.textContent = G.user.name; n.style.fontWeight = '600';
+        const e = document.createElement('div'); e.textContent = G.user.email; e.className = 'note'; e.style.margin = '0';
+        t.append(n, e);
+        u.append(a, t);
+      }
+      setLabel($('g-signin-label'), G.user && !signedIn() ? `Continue as ${G.user.name}` : 'Sign in with Google',
+        G.user && !signedIn() ? 'Your session ended; one tap signs you back in' : 'Uses your Google account. No password is stored in Observer');
+      $('g-signin').style.display = signedIn() ? 'none' : 'flex';
+      $('g-drive').style.display = signedIn() ? 'block' : 'none';
+      $('g-signout').style.display = G.user || signedIn() ? 'block' : 'none';
+      $('g-note').textContent = signedIn()
+        ? 'Observer can only see PDFs you pick or save with it.'
+        : 'Signing in lets you open and save PDFs in your Google Drive. Observer only gets access to files you pick or create with it.';
+    }
+
+    async function loadRecent() {
+      const list = $('g-recent');
+      list.textContent = 'Loading…';
+      try {
+        const files = await driveRecent();
+        list.textContent = '';
+        if (!files.length) { list.textContent = 'Nothing yet. PDFs you open or save with Observer appear here.'; return; }
+        for (const f of files) {
+          const b = document.createElement('button');
+          b.className = 'g-item';
+          setLabel(b, f.name, f.modifiedTime ? 'Modified ' + new Date(f.modifiedTime).toLocaleString() : '');
+          b.onclick = () => run('Google Drive', () => openDriveDocs([{ id: f.id, name: f.name, parentId: (f.parents || [])[0] || null }]));
+          list.appendChild(b);
         }
-        if (mode === 'add') await addFiles(files, srcs);
-        else await loadDocument(files[0], srcs[0]);
-      });
+      } catch (e) { list.textContent = 'Couldn\'t load your files: ' + e.message; }
     }
 
-    function renderDriveStatus() {
-      const el = $('gdrive-status');
-      if (!driveConfigured) el.textContent = 'Not set up yet. Add your Google Cloud keys to config.js to turn it on (see README). On iPhone you can already reach Google Drive through Files if the Google Drive app is installed.';
-      else if (G.token && Date.now() < G.exp) el.textContent = 'Signed in. Observer can only see files you pick or save with it.';
-      else el.textContent = 'Ready. You\'ll sign in with Google the first time you open or save a file there.';
-      $('gdrive-signout').style.display = G.token ? 'block' : 'none';
+    // Call inside run()
+    async function openDriveDocs(docs) {
+      closeModal('google-modal');
+      setStatus('Downloading from Google Drive…', 0);
+      const files = [], srcs = [];
+      for (const d of docs) {
+        files.push(new File([await driveDownload(d.id)], d.name, { type: 'application/pdf' }));
+        srcs.push({ type: 'drive', id: d.id, name: d.name, parentId: d.parentId });
+      }
+      if (gMode === 'add') await addFiles(files, srcs);
+      else await loadDocument(files[0], srcs[0]);
     }
-    $('gdrive-signout').onclick = () => {
-      if (G.token && window.google && google.accounts) google.accounts.oauth2.revoke(G.token, () => {});
-      G.token = null; G.exp = 0;
-      renderDriveStatus();
-      setStatus('Signed out of Google Drive');
+
+    $('g-signin').onclick = () => {
+      const t = driveToken(); if (!t) return;
+      run('Sign in', async () => {
+        await t;
+        renderAccount();
+        setStatus(`Signed in${G.user ? ' as ' + G.user.name : ''}`);
+        await loadRecent();
+      });
     };
+    $('g-browse').onclick = () => {
+      const t = driveToken(); if (!t) return;
+      run('Google Drive', async () => {
+        await t;
+        closeModal('google-modal');
+        const docs = await pickDrive({ multi: gMode === 'add' });
+        if (docs.length) await openDriveDocs(docs);
+      });
+    };
+    $('g-signout').onclick = () => {
+      if (G.token && window.google && google.accounts) google.accounts.oauth2.revoke(G.token, () => {});
+      G.token = null; G.exp = 0; G.user = null;
+      store.del('observer-google-user');
+      renderAccount();
+      closeModal('google-modal');
+      setStatus('Signed out of Google');
+    };
+    $('settings-google').onclick = () => { closeModal('settings-modal'); showGoogleSheet('account'); };
+    renderAccount();
     if (!driveConfigured) ['start-gdrive', 'open-gdrive', 'save-gdrive-here', 'save-gdrive-folder'].forEach(id => $(id).classList.add('locked'));
 
     updateLock();
