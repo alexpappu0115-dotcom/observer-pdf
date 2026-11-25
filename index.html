@@ -35,10 +35,7 @@
     header {
       background: var(--ink);
       padding: calc(0.7rem + env(safe-area-inset-top)) 1rem 0.7rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
+      display: block;
       border-bottom: 1px solid #2a2a2a;
       position: sticky;
       top: 0;
@@ -53,7 +50,16 @@
       white-space: nowrap;
     }
     .logo span { font-size: 0.7rem; color: var(--cream); margin-left: 0.4rem; font-weight: 400; opacity: 0.8; }
+    .header-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .header-left { display: flex; align-items: center; gap: 0.2rem; min-width: 0; }
     .header-actions { display: flex; gap: 0.35rem; align-items: center; }
+    .doc-only { display: none !important; }
+    body.has-doc .doc-only { display: inline-flex !important; }
+    .icon-btn svg { width: 20px; height: 20px; display: block; }
+    .view-bar { display: none; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.45rem; flex-wrap: wrap; }
+    body.has-doc .view-bar { display: flex; }
+    .view-bar select { width: auto; margin: 0; padding: 0.3rem 0.5rem; font-size: 0.8rem; background: var(--elev); }
+    .view-bar .small-btn { background: var(--elev); color: var(--text); font-size: 0.78rem; padding: 0.35rem 0.7rem; }
     .icon-btn {
       background: transparent;
       border: none;
@@ -62,8 +68,7 @@
       padding: 0.35rem 0.5rem;
       cursor: pointer;
     }
-    #zoom-controls { display: none; align-items: center; gap: 0.1rem; }
-    #zoom-controls.show { display: flex; }
+    #zoom-controls { display: flex; align-items: center; gap: 0.1rem; }
     #zoom-label { background: transparent; color: var(--cream); font-size: 0.8rem; font-weight: 500; padding: 0.3rem 0.4rem; min-width: 52px; }
 
     /* Bottom toolbar */
@@ -136,6 +141,86 @@
       background: white;
     }
     #pdf-canvas { display: block; }
+    #pdf-canvas, .page-slot canvas { position: relative; z-index: 0; }
+
+    /* Layers over each page: search highlights, selectable text, links */
+    .hl-layer, .link-layer { position: absolute; inset: 0; pointer-events: none; }
+    .hl-layer { z-index: 1; }
+    .hl { position: absolute; background: rgba(255, 205, 40, 0.45); border-radius: 2px; mix-blend-mode: multiply; }
+    .hl.cur { background: rgba(255, 120, 0, 0.6); outline: 2px solid rgba(255, 120, 0, 0.9); }
+    .textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-align: initial; z-index: 2;
+      -webkit-text-size-adjust: none; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; }
+    .textLayer span, .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
+    .textLayer span.markedContent { top: 0; height: 0; }
+    .textLayer ::selection { background: rgba(40, 110, 255, 0.35); }
+    .textLayer br::selection { background: transparent; }
+    .textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: -1; cursor: default; user-select: none; -webkit-user-select: none; }
+    .textLayer .endOfContent.active { top: 0; }
+    /* pdf.js marks rotated pages; the text layer is rotated to match */
+    .textLayer[data-main-rotation="90"] { transform: rotate(90deg) translateY(-100%); }
+    .textLayer[data-main-rotation="180"] { transform: rotate(180deg) translate(-100%, -100%); }
+    .textLayer[data-main-rotation="270"] { transform: rotate(270deg) translateX(-100%); }
+    .link-layer { z-index: 3; }
+    .pdf-link { position: absolute; pointer-events: auto; display: block; border-radius: 2px; }
+    .pdf-link:hover, .pdf-link:focus { background: rgba(40, 110, 255, 0.15); outline: 1px solid rgba(40, 110, 255, 0.5); }
+    #draw-canvas, #sig-overlay { z-index: 4; }
+
+    /* Continuous and two-page modes */
+    .flow { position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 0 auto; }
+    .flow.two { display: grid; grid-template-columns: repeat(2, max-content); justify-content: center; align-items: start; }
+    .flow.two .page-slot:nth-child(odd) { justify-self: end; }
+    .flow.two .page-slot:nth-child(even) { justify-self: start; }
+    .page-slot { position: relative; background: white; box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
+    .page-slot.loading::after { content: attr(data-page); position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 1.4rem; }
+
+    /* Reflow (text) mode */
+    .reflow { max-width: 42em; margin: 0 auto; padding: 0.5rem 1rem 2rem; color: #e8e4dc; line-height: 1.6; font-family: Georgia, "Times New Roman", serif; }
+    .reflow section { padding: 0.6rem 0 1rem; border-bottom: 1px solid #2a2a2a; }
+    .reflow .reflow-page { font-family: -apple-system, system-ui, sans-serif; font-size: 0.72rem; color: var(--brass); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+    .reflow p { margin: 0 0 0.9em; overflow-wrap: anywhere; }
+    .reflow mark { background: rgba(255, 205, 40, 0.5); color: inherit; border-radius: 2px; }
+    .reflow mark.cur { background: rgba(255, 120, 0, 0.75); }
+
+    /* Side panel */
+    .drawer { position: fixed; top: var(--header-h, 64px); bottom: 0; left: 0; width: min(300px, 86vw); background: var(--panel);
+      border-right: 1px solid #333; z-index: 150; transform: translateX(-102%); transition: transform 0.2s ease; display: flex; flex-direction: column; }
+    .drawer.open { transform: none; box-shadow: 8px 0 30px rgba(0,0,0,0.5); }
+    .drawer-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 140; display: none; }
+    .drawer.open + .drawer-scrim { display: block; }
+    .drawer-head { display: flex; gap: 0.3rem; padding: 0.5rem; border-bottom: 1px solid #333; align-items: center; }
+    .drawer-head .tab { background: transparent; color: #aaa; padding: 0.4rem 0.7rem; font-size: 0.82rem; }
+    .drawer-head .tab.active { background: var(--elev); color: var(--cream); }
+    .drawer-head .icon-btn { margin-left: auto; }
+    .drawer-body { flex: 1; overflow: auto; padding: 0.6rem; padding-bottom: 130px; }
+    #thumbs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; align-content: start; }
+    .thumb { background: transparent; padding: 0.25rem; border: 2px solid transparent; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; color: #aaa; font-size: 0.72rem; font-weight: 500; }
+    .thumb.current { border-color: var(--brass); color: var(--cream); }
+    .thumb .thumb-img { width: 100%; min-height: 120px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .thumb canvas { width: 100%; height: auto; display: block; }
+    .outline-item { display: block; width: 100%; text-align: left; background: transparent; color: var(--text); font-weight: 400; font-size: 0.88rem; padding: 0.5rem 0.6rem; border-radius: 6px; }
+    .outline-item:hover { background: var(--elev); }
+    .drawer-empty { color: #999; font-size: 0.85rem; padding: 0.5rem; }
+
+    /* Search bar */
+    .search-bar { position: fixed; top: var(--header-h, 64px); left: 0; right: 0; z-index: 96; background: var(--panel); border-bottom: 1px solid #333;
+      padding: 0.45rem 0.6rem; display: none; gap: 0.35rem; align-items: center; }
+    .search-bar.show { display: flex; }
+    .search-bar input { margin: 0; flex: 1; min-width: 0; padding: 0.5rem 0.6rem; font-size: 0.95rem; }
+    .search-bar button { padding: 0.45rem 0.6rem; font-size: 0.8rem; }
+    #search-count { font-size: 0.78rem; color: #aaa; min-width: 3.5rem; text-align: center; white-space: nowrap; }
+    body.searching #workspace { padding-top: 54px; }
+    body.searching .float-bar { top: calc(var(--header-h, 64px) + 58px); }
+
+    /* Printing: only the rendered pages */
+    #print-root { display: none; }
+    @media print {
+      body > *:not(#print-root) { display: none !important; }
+      body { background: white; padding: 0; }
+      #print-root { display: block; }
+      #print-root img { display: block; width: 100%; height: auto; break-after: page; page-break-after: always; }
+      #print-root img:last-child { break-after: auto; page-break-after: auto; }
+    }
+    @page { margin: 0; }
     #draw-canvas {
       position: absolute;
       left: 0;
@@ -174,7 +259,7 @@
 
     .float-bar {
       position: fixed;
-      top: calc(64px + env(safe-area-inset-top));
+      top: var(--header-h, 64px);
       left: 50%;
       transform: translateX(-50%);
       background: var(--panel);
@@ -263,7 +348,7 @@
     .settings-row label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 0.25rem; }
     .row-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .row-buttons > * { flex: 1 1 auto; text-align: center; }
-    .page-info { font-size: 0.85rem; color: var(--brass); min-width: 50px; text-align: center; align-self: center; }
+    .page-info { font-size: 0.85rem; color: var(--brass); min-width: 56px; text-align: center; align-self: center; background: transparent; padding: 0.4rem 0.2rem; }
     #id-status { font-size: 0.85rem; color: var(--cream); background: var(--panel); border-radius: 8px; padding: 0.6rem; line-height: 1.4; }
     #file-list { font-size: 0.82rem; color: #bbb; margin: 0.6rem 0; line-height: 1.5; }
 
@@ -314,16 +399,35 @@
   </style>
 </head>
 <body>
-  <header>
-    <div class="logo">Observer <span>PDF</span></div>
-    <div class="header-actions">
+  <header id="app-header">
+    <div class="header-row">
+      <div class="header-left">
+        <button class="icon-btn doc-only" id="panel-btn" title="Pages and bookmarks" aria-label="Pages and bookmarks">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="logo">Observer <span>PDF</span></div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn doc-only" id="search-btn" title="Search (Ctrl+F)" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+        </button>
+        <button class="account-btn" id="account-btn" title="Sign in with Google">Sign in</button>
+        <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
+      </div>
+    </div>
+    <div class="view-bar" id="view-bar">
       <div id="zoom-controls">
         <button class="icon-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
-        <button id="zoom-label" title="Fit to width">100%</button>
+        <button id="zoom-label" title="Reset zoom">100%</button>
         <button class="icon-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
       </div>
-      <button class="account-btn" id="account-btn" title="Sign in with Google">Sign in</button>
-      <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
+      <select id="view-mode" aria-label="Reading mode">
+        <option value="single">Single page</option>
+        <option value="continuous">Continuous</option>
+        <option value="two">Two pages</option>
+        <option value="reflow">Reflow text</option>
+      </select>
+      <button class="small-btn" id="print-btn" title="Print (Ctrl+P)">Print</button>
     </div>
   </header>
 
@@ -351,12 +455,40 @@
     <div id="viewer-wrap">
       <div id="page-stack">
         <canvas id="pdf-canvas"></canvas>
+        <div id="hl-layer" class="hl-layer"></div>
+        <div id="text-layer" class="textLayer"></div>
+        <div id="link-layer" class="link-layer"></div>
         <canvas id="draw-canvas"></canvas>
         <img id="sig-overlay" alt="Signature placement" draggable="false">
       </div>
+      <div id="flow" class="flow" style="display:none;"></div>
+      <div id="reflow" class="reflow" style="display:none;"></div>
     </div>
     <div id="ocr-output" class="ocr-panel"></div>
   </div>
+
+  <!-- Search -->
+  <div id="search-bar" class="search-bar" role="search">
+    <input type="search" id="search-input" placeholder="Search this PDF" enterkeyhint="search" autocomplete="off" aria-label="Search text">
+    <span id="search-count"></span>
+    <button class="secondary" id="search-prev" aria-label="Previous match">▲</button>
+    <button class="secondary" id="search-next" aria-label="Next match">▼</button>
+    <button class="secondary" id="search-close" aria-label="Close search">✕</button>
+  </div>
+
+  <!-- Side panel: thumbnails and bookmarks -->
+  <aside id="drawer" class="drawer" aria-label="Pages and bookmarks">
+    <div class="drawer-head">
+      <button class="tab active" data-tab="thumbs">Pages</button>
+      <button class="tab" data-tab="outline">Bookmarks</button>
+      <button class="icon-btn" id="drawer-close" aria-label="Close panel">✕</button>
+    </div>
+    <div id="thumbs" class="drawer-body"></div>
+    <div id="outline" class="drawer-body" style="display:none;"></div>
+  </aside>
+  <div id="drawer-scrim" class="drawer-scrim"></div>
+
+  <div id="print-root" aria-hidden="true"></div>
 
   <!-- Drawing toolbar -->
   <div id="draw-bar" class="float-bar">
@@ -382,13 +514,25 @@
     <button class="secondary" id="open-btn">Open</button>
     <button class="secondary" id="add-btn">Add</button>
     <button class="secondary" id="prev" aria-label="Previous page">◀</button>
-    <span class="page-info" id="page-info">1 / 1</span>
+    <button class="page-info" id="page-info" title="Go to page">1 / 1</button>
     <button class="secondary" id="next" aria-label="Next page">▶</button>
     <button class="secondary" id="ocr-btn">OCR</button>
     <button class="secondary" id="draw-btn">Draw</button>
     <button class="secondary" id="sign-btn">Sign</button>
     <button class="secondary" id="tools-btn">Pages</button>
     <button id="save-btn">Save</button>
+  </div>
+
+  <!-- Go to page -->
+  <div id="goto-modal" class="modal-overlay">
+    <div class="modal">
+      <h3>Go to page</h3>
+      <input type="number" id="goto-input" inputmode="numeric" min="1" enterkeyhint="go">
+      <div class="row-buttons">
+        <button class="secondary" data-close="goto-modal">Cancel</button>
+        <button id="goto-go">Go</button>
+      </div>
+    </div>
   </div>
 
   <!-- Signature Modal -->
@@ -676,30 +820,195 @@
         zoom = 1;
         signed = hasSignature(pdfBytes);
         updateLock();
+        if (tempModeFrom) { viewMode = tempModeFrom; tempModeFrom = null; }
         endPlacement();
         setDrawing(false);
+        if (search.q || $('search-bar').classList.contains('show')) closeSearch();
         ocrOut.style.display = 'none';
         $('start').style.display = 'none';
         workspace.style.display = 'flex';
         bottomBar.classList.add('show');
-        $('zoom-controls').classList.add('show');
+        document.body.classList.add('has-doc');
+        updateHeaderVar();
+        window.scrollTo(0, 0);
         await reloadView();
         setStatus(`Loaded ${originalName}${signed ? ' (digitally signed)' : ''}`);
       }
     }
 
-    // ---------- Rendering ----------
+    // ---------- Viewer ----------
+    // Four reading modes share one document:
+    //   single     - one page; Draw and Place signature always work here
+    //   continuous - all pages stacked, rendered lazily as they scroll into view
+    //   two        - pages side by side in pairs
+    //   reflow     - the page text re-flowed for small screens
+    // Each rendered page gets: canvas, search highlights, a selectable text layer and clickable links.
+    const VIEW_MODES = ['single', 'continuous', 'two', 'reflow'];
+    let viewMode = VIEW_MODES.includes(store.get('observer-view')) ? store.get('observer-view') : 'single';
+    let tempModeFrom = null;      // mode to return to after Draw / Place signature
+    let docVersion = 0;           // bumps whenever the document changes; invalidates caches
+    let textCache = new Map();    // page -> Promise<{tc, items, str, lower, offs}>
+    let pageSizes = [];           // [{w, h}] at scale 1 (rotation applied)
+    const flowEl = $('flow'), reflowEl = $('reflow');
+    const isFlow = () => viewMode === 'continuous' || viewMode === 'two';
+    const headerH = () => $('app-header').offsetHeight + (document.body.classList.contains('searching') ? 54 : 0);
+    function updateHeaderVar() { document.documentElement.style.setProperty('--header-h', $('app-header').offsetHeight + 'px'); }
+    const pct = scale => Math.round(scale * 100 / (96 / 72)) + '%';
+    const clampPage = n => Math.min(Math.max(1, Math.round(n) || 1), totalPages || 1);
+    function devicePx(w, h) {
+      let dpr = window.devicePixelRatio || 1;
+      const MAX_PX = 16e6; // iOS canvas memory limit
+      if (w * h * dpr * dpr > MAX_PX) dpr = Math.sqrt(MAX_PX / (w * h));
+      return dpr;
+    }
+
     async function reloadView() {
       const doc = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
       if (renderTask) { renderTask.cancel(); renderTask = null; }
       const old = pdfDoc;
       pdfDoc = doc;
       if (old) old.destroy();
+      docVersion++;
+      textCache = new Map();
+      pageSizes = [];
       totalPages = doc.numPages;
-      currentPage = Math.min(Math.max(1, currentPage), totalPages);
-      await renderPage();
+      currentPage = clampPage(currentPage);
+      await renderView();
+      if ($('drawer').classList.contains('open')) refreshDrawer();
+      if (search.q) runSearch(search.q, { keepPage: true });
     }
 
+    async function renderView() {
+      if (!pdfDoc) return;
+      stack.style.display = viewMode === 'single' ? '' : 'none';
+      flowEl.style.display = isFlow() ? '' : 'none';
+      reflowEl.style.display = viewMode === 'reflow' ? '' : 'none';
+      $('view-mode').value = viewMode;
+      if (viewMode === 'single') await renderPage();
+      else if (viewMode === 'reflow') await renderReflow();
+      else await buildFlow();
+      updatePageInfo();
+    }
+
+    function setViewMode(mode, { persist = true } = {}) {
+      viewMode = mode;
+      if (persist) store.set('observer-view', mode);
+      return renderView();
+    }
+    // Draw and Place signature work on a single page; switch there and come back afterwards.
+    async function enterSingleForEditing() {
+      if (viewMode !== 'single') { tempModeFrom = viewMode; await setViewMode('single', { persist: false }); }
+    }
+    function leaveEditing() {
+      if (tempModeFrom && !drawingMode && !placement) {
+        const m = tempModeFrom; tempModeFrom = null;
+        setViewMode(m, { persist: false }).catch(() => {});
+      }
+    }
+    $('view-mode').onchange = e => {
+      tempModeFrom = null;
+      if (drawingMode) setDrawing(false);
+      if (placement) endPlacement();
+      setViewMode(e.target.value);
+    };
+
+    function updatePageInfo() {
+      pageInfo.textContent = `${currentPage} / ${totalPages}`;
+      markThumb();
+    }
+
+    // ---- Shared: text, links and highlights for one rendered page ----
+    async function getPageText(n) {
+      if (!textCache.has(n)) {
+        const cache = textCache;
+        const p = (async () => {
+          const page = await pdfDoc.getPage(n);
+          const tc = await page.getTextContent();
+          let str = ''; const offs = [];
+          for (const it of tc.items) {
+            offs.push(str.length);
+            str += it.str || '';
+            if (it.hasEOL) str += ' ';
+          }
+          return { tc, items: tc.items, str, lower: str.toLowerCase(), offs };
+        })();
+        p.catch(() => cache.delete(n));
+        cache.set(n, p);
+      }
+      return textCache.get(n);
+    }
+
+    async function renderPageLayers(page, vp, els, n) {
+      const v = docVersion;
+      paintHighlights(n, vp, els.hl);
+      renderLinks(page, vp, els.links);
+      try {
+        const t = await getPageText(n);
+        if (v !== docVersion) return;
+        els.text.textContent = '';
+        els.text.style.setProperty('--scale-factor', vp.scale);
+        await pdfjsLib.renderTextLayer({ textContentSource: t.tc, container: els.text, viewport: vp, textDivs: [] }).promise;
+      } catch (e) { /* text layer is optional */ }
+    }
+
+    async function renderLinks(page, vp, el) {
+      el.textContent = '';
+      let annots;
+      try { annots = await page.getAnnotations({ intent: 'display' }); } catch { return; }
+      for (const a of annots) {
+        if (a.subtype !== 'Link' || !(a.url || a.dest)) continue;
+        const [x1, y1, x2, y2] = vp.convertToViewportRectangle(a.rect);
+        const l = document.createElement('a');
+        l.className = 'pdf-link';
+        Object.assign(l.style, { left: Math.min(x1, x2) + 'px', top: Math.min(y1, y2) + 'px', width: Math.abs(x2 - x1) + 'px', height: Math.abs(y2 - y1) + 'px' });
+        if (a.url) {
+          l.href = a.url; l.target = '_blank'; l.rel = 'noopener noreferrer';
+          l.title = a.url;
+        } else {
+          l.href = '#';
+          l.title = 'Go to linked page';
+          l.onclick = e => { e.preventDefault(); goToDest(a.dest); };
+        }
+        el.appendChild(l);
+      }
+    }
+
+    async function goToDest(dest) {
+      try {
+        const explicit = typeof dest === 'string' ? await pdfDoc.getDestination(dest) : dest;
+        if (!Array.isArray(explicit)) return;
+        const ref = explicit[0];
+        const idx = ref && typeof ref === 'object' ? await pdfDoc.getPageIndex(ref) : (Number.isInteger(ref) ? ref : null);
+        if (idx == null) return;
+        const kind = explicit[1] && explicit[1].name;
+        const y = kind === 'XYZ' ? explicit[3] : (kind === 'FitH' || kind === 'FitBH') ? explicit[2] : null;
+        goToPage(idx + 1, { pdfY: typeof y === 'number' ? y : null });
+      } catch (e) { console.warn('Bad link destination', e); }
+    }
+
+    // Move to a page in whichever mode is showing. pdfY scrolls to a spot on the page.
+    async function goToPage(n, { pdfY = null } = {}) {
+      if (!pdfDoc) return;
+      currentPage = clampPage(n);
+      updatePageInfo();
+      if (viewMode === 'single') {
+        await renderPage();
+        let y = 0;
+        if (pdfY != null && viewport) y = viewport.convertToViewportPoint(0, pdfY)[1];
+        scrollToDoc(stack.getBoundingClientRect().top + window.scrollY + y);
+      } else if (viewMode === 'reflow') {
+        const sec = reflowEl.querySelector(`section[data-page="${currentPage}"]`);
+        if (sec) scrollToDoc(sec.getBoundingClientRect().top + window.scrollY);
+      } else {
+        await scrollToSlot(currentPage, pdfY);
+      }
+    }
+    function scrollToDoc(y) {
+      suppressScrollSync = Date.now() + 400;
+      window.scrollTo({ top: Math.max(0, y - headerH() - 8), behavior: 'auto' });
+    }
+
+    // ---- Single page ----
     async function renderPage() {
       if (!pdfDoc) return;
       const seq = ++renderSeq;
@@ -710,10 +1019,7 @@
       const fit = Math.min(avail / base.width, 2);
       viewport = page.getViewport({ scale: fit * zoom });
 
-      let dpr = window.devicePixelRatio || 1;
-      const MAX_PX = 16e6; // iOS canvas memory limit
-      if (viewport.width * viewport.height * dpr * dpr > MAX_PX) dpr = Math.sqrt(MAX_PX / (viewport.width * viewport.height));
-
+      const dpr = devicePx(viewport.width, viewport.height);
       if (renderTask) { renderTask.cancel(); renderTask = null; }
       const w = viewport.width, h = viewport.height;
       for (const c of [canvas, drawCanvas]) {
@@ -729,25 +1035,482 @@
       catch (e) { if (e && e.name === 'RenderingCancelledException') return; throw e; }
       if (renderTask === task) renderTask = null;
 
-      pageInfo.textContent = `${currentPage} / ${totalPages}`;
-      $('zoom-label').textContent = Math.round(viewport.scale * 100 / (96 / 72)) + '%';
+      updatePageInfo();
+      $('zoom-label').textContent = pct(viewport.scale);
       redrawInk();
       if (placement) positionOverlay();
+      if (seq === renderSeq) await renderPageLayers(page, viewport, { hl: $('hl-layer'), text: $('text-layer'), links: $('link-layer') }, currentPage);
     }
 
-    $('prev').onclick = () => { if (currentPage > 1) { currentPage--; renderPage(); } };
-    $('next').onclick = () => { if (currentPage < totalPages) { currentPage++; renderPage(); } };
+    // ---- Continuous / two pages ----
+    let flowObserver = null, flowSlots = [], flowScale = 1, flowSeq = 0, suppressScrollSync = 0;
+    async function buildFlow() {
+      const seq = ++flowSeq;
+      if (pageSizes.length !== totalPages) {
+        const v = docVersion;
+        const sizes = await Promise.all(Array.from({ length: totalPages }, (_, i) =>
+          pdfDoc.getPage(i + 1).then(p => { const vp = p.getViewport({ scale: 1 }); return { w: vp.width, h: vp.height }; })));
+        if (v !== docVersion) return;
+        pageSizes = sizes;
+      }
+      if (seq !== flowSeq) return;
+      const two = viewMode === 'two', gap = 12;
+      const maxW = Math.max(...pageSizes.map(s => s.w));
+      const avail = Math.max(200, wrap.clientWidth - 16);
+      flowScale = Math.min(two ? (avail - gap) / (2 * maxW) : avail / maxW, 2) * zoom;
+      if (flowObserver) flowObserver.disconnect();
+      flowEl.textContent = '';
+      flowEl.classList.toggle('two', two);
+      flowSlots = pageSizes.map((s, i) => {
+        const d = document.createElement('div');
+        d.className = 'page-slot loading';
+        d.dataset.page = i + 1;
+        d.style.width = s.w * flowScale + 'px';
+        d.style.height = s.h * flowScale + 'px';
+        flowEl.appendChild(d);
+        return d;
+      });
+      flowObserver = new IntersectionObserver(entries => {
+        for (const e of entries) e.isIntersecting ? renderSlot(e.target) : unrenderSlot(e.target);
+      }, { rootMargin: '1000px 0px' });
+      flowSlots.forEach(s => flowObserver.observe(s));
+      $('zoom-label').textContent = pct(flowScale);
+      await scrollToSlot(currentPage);
+    }
+
+    async function renderSlot(slot) {
+      if (slot._state) return;
+      slot._state = 'rendering';
+      const v = docVersion, scale = flowScale, n = +slot.dataset.page;
+      try {
+        const page = await pdfDoc.getPage(n);
+        if (v !== docVersion || scale !== flowScale || !slot.isConnected || slot._state !== 'rendering') { if (slot._state === 'rendering') slot._state = null; return; }
+        const vp = page.getViewport({ scale });
+        const dpr = devicePx(vp.width, vp.height);
+        const c = document.createElement('canvas');
+        c.width = Math.floor(vp.width * dpr); c.height = Math.floor(vp.height * dpr);
+        c.style.width = vp.width + 'px'; c.style.height = vp.height + 'px'; c.style.display = 'block';
+        const hl = document.createElement('div'); hl.className = 'hl-layer';
+        const tl = document.createElement('div'); tl.className = 'textLayer';
+        const ll = document.createElement('div'); ll.className = 'link-layer';
+        const task = page.render({ canvasContext: c.getContext('2d'), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null });
+        slot._task = task;
+        await task.promise;
+        if (slot._state !== 'rendering') return;
+        slot.textContent = '';
+        slot.classList.remove('loading');
+        slot.append(c, hl, tl, ll);
+        slot._vp = vp;
+        slot._state = 'done';
+        await renderPageLayers(page, vp, { hl, text: tl, links: ll }, n);
+      } catch (e) {
+        if (slot._state === 'rendering') slot._state = null;
+      }
+    }
+    function unrenderSlot(slot) {
+      if (!slot._state) return;
+      if (slot._task) { try { slot._task.cancel(); } catch {} slot._task = null; }
+      slot._state = null; slot._vp = null;
+      slot.textContent = '';
+      slot.classList.add('loading');
+    }
+    async function scrollToSlot(n, pdfY = null) {
+      const slot = flowSlots[n - 1];
+      if (!slot) return;
+      let off = 0;
+      if (pdfY != null) {
+        try { const p = await pdfDoc.getPage(n); off = p.getViewport({ scale: flowScale }).convertToViewportPoint(0, pdfY)[1]; } catch {}
+      }
+      scrollToDoc(slot.getBoundingClientRect().top + window.scrollY + off);
+    }
+
+    // Track which page is in view while scrolling (continuous, two pages, reflow)
+    let scrollRaf = 0;
+    window.addEventListener('scroll', () => {
+      if (viewMode === 'single' || !pdfDoc || scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0;
+        if (Date.now() < suppressScrollSync) return;
+        const els = viewMode === 'reflow' ? [...reflowEl.querySelectorAll('section')] : flowSlots;
+        if (!els.length) return;
+        const probe = headerH() + (window.innerHeight - headerH()) * 0.25;
+        let lo = 0, hi = els.length - 1, best = 0;
+        while (lo <= hi) {   // last element whose top is above the probe line
+          const mid = (lo + hi) >> 1;
+          if (els[mid].getBoundingClientRect().top <= probe) { best = mid; lo = mid + 1; } else hi = mid - 1;
+        }
+        const n = +els[best].dataset.page;
+        if (n && n !== currentPage) { currentPage = n; updatePageInfo(); }
+      });
+    }, { passive: true });
+
+    // ---- Reflow ----
+    let reflowSeq = 0;
+    function buildParagraphs(items) {
+      const lines = []; let cur = '', y = null, h = 0;
+      for (const it of items) {
+        if (typeof it.str !== 'string') continue;
+        if (cur === '') { y = it.transform[5]; h = it.height || h; }
+        cur += it.str;
+        if (it.hasEOL) { lines.push({ text: cur, y, h: it.height || h }); cur = ''; }
+      }
+      if (cur.trim()) lines.push({ text: cur, y, h });
+      const paras = []; let p = '', prev = null;
+      for (const L of lines) {
+        const t = L.text.replace(/\s+/g, ' ').trim();
+        if (!t) { if (p) { paras.push(p); p = ''; } prev = L; continue; }
+        const lh = L.h || (prev && prev.h) || 12;
+        const gap = prev && prev.y != null && L.y != null ? Math.abs(prev.y - L.y) : 0;
+        if (p && gap > lh * 1.9) { paras.push(p); p = ''; }
+        p = p ? p + ' ' + t : t;
+        prev = L;
+      }
+      if (p) paras.push(p);
+      return paras;
+    }
+    async function renderReflow() {
+      const seq = ++reflowSeq, v = docVersion;
+      reflowEl.textContent = '';
+      reflowEl.style.fontSize = (17 * zoom).toFixed(1) + 'px';
+      $('zoom-label').textContent = Math.round(zoom * 100) + '%';
+      for (let i = 1; i <= totalPages; i++) {
+        let t;
+        try { t = await getPageText(i); } catch { continue; }
+        if (seq !== reflowSeq || v !== docVersion) return;
+        const sec = document.createElement('section');
+        sec.dataset.page = i;
+        const h = document.createElement('div'); h.className = 'reflow-page'; h.textContent = `Page ${i}`;
+        sec.appendChild(h);
+        const paras = buildParagraphs(t.items);
+        if (!paras.length) {
+          const e = document.createElement('p'); e.className = 'note';
+          e.textContent = 'No text on this page. If it is a scan, run OCR to read it.';
+          sec.appendChild(e);
+        }
+        for (const para of paras) { const e = document.createElement('p'); e.textContent = para; sec.appendChild(e); }
+        reflowEl.appendChild(sec);
+        if (i === currentPage) scrollToDoc(sec.getBoundingClientRect().top + window.scrollY);
+      }
+      markReflow();
+    }
+
+    // ---- Search ----
+    const search = { q: '', results: [], idx: -1, seq: 0, done: true };
+    function openSearch() {
+      if (!pdfDoc) return;
+      document.body.classList.add('searching');
+      $('search-bar').classList.add('show');
+      $('search-input').focus();
+      $('search-input').select();
+    }
+    function closeSearch() {
+      document.body.classList.remove('searching');
+      $('search-bar').classList.remove('show');
+      search.q = ''; search.results = []; search.idx = -1; search.seq++;
+      $('search-input').value = '';
+      updateSearchCount();
+      repaintHighlights();
+    }
+    function rectsFor(t, s, e) {
+      const rects = [];
+      for (let k = 0; k < t.items.length; k++) {
+        const it = t.items[k], o = t.offs[k], L = (it.str || '').length;
+        if (!L || o >= e || o + L <= s) continue;
+        const a = Math.max(s, o) - o, b = Math.min(e, o + L) - o;
+        const [, , c, d, x, y] = it.transform;
+        const fh = Math.hypot(c, d) || it.height || 10;
+        const w = it.width || fh * L * 0.5;
+        rects.push([x + w * (a / L), y - fh * 0.22, x + w * (b / L), y + fh * 0.88]);
+      }
+      return rects;
+    }
+    async function runSearch(q, { keepPage = false } = {}) {
+      const seq = ++search.seq;
+      const prevIdx = search.idx;
+      search.q = q.trim(); search.results = []; search.idx = -1; search.done = false;
+      repaintHighlights();
+      if (!search.q) { search.done = true; updateSearchCount(); return; }
+      const needle = search.q.toLowerCase().replace(/\s+/g, ' ');
+      for (let i = 1; i <= totalPages; i++) {
+        let t;
+        try { t = await getPageText(i); } catch { continue; }
+        if (seq !== search.seq) return;
+        let from = 0, ord = 0;
+        while ((from = t.lower.indexOf(needle, from)) !== -1) {
+          search.results.push({ page: i, ord: ord++, rects: rectsFor(t, from, from + needle.length) });
+          from += needle.length;
+        }
+        if (i % 20 === 0) updateSearchCount();
+      }
+      search.done = true;
+      if (!search.results.length) { updateSearchCount(); repaintHighlights(); return; }
+      let start = keepPage && prevIdx >= 0 ? Math.min(prevIdx, search.results.length - 1)
+        : search.results.findIndex(r => r.page >= currentPage);
+      showMatch(start < 0 ? 0 : start);
+    }
+    function updateSearchCount() {
+      const el = $('search-count');
+      if (!search.q) el.textContent = '';
+      else if (!search.done) el.textContent = `${search.results.length}…`;
+      else if (!search.results.length) el.textContent = 'No results';
+      else el.textContent = `${search.idx + 1} / ${search.results.length}`;
+    }
+    async function showMatch(i) {
+      if (!search.results.length) return;
+      search.idx = (i + search.results.length) % search.results.length;
+      updateSearchCount();
+      const r = search.results[search.idx];
+      if (viewMode === 'reflow') {
+        markReflow();
+        const m = reflowEl.querySelector('mark.cur');
+        if (m) { currentPage = r.page; updatePageInfo(); scrollToDoc(m.getBoundingClientRect().top + window.scrollY - 80); }
+        return;
+      }
+      const top = r.rects.length ? Math.max(...r.rects.map(x => x[3])) : null;
+      if (viewMode === 'single') {
+        if (r.page !== currentPage) { currentPage = r.page; await renderPage(); }
+        else repaintHighlights();
+        const el = $('hl-layer').querySelector('.hl.cur');
+        if (el) scrollToDoc(el.getBoundingClientRect().top + window.scrollY - 80);
+      } else {
+        currentPage = r.page; updatePageInfo();
+        repaintHighlights();
+        await scrollToSlot(r.page, top != null ? top + 60 : null);
+      }
+    }
+    function paintHighlights(n, vp, el) {
+      if (!el || !vp) return;
+      el.textContent = '';
+      search.results.forEach((r, i) => {
+        if (r.page !== n) return;
+        for (const rect of r.rects) {
+          const [x1, y1, x2, y2] = vp.convertToViewportRectangle(rect);
+          const d = document.createElement('div');
+          d.className = 'hl' + (i === search.idx ? ' cur' : '');
+          Object.assign(d.style, { left: Math.min(x1, x2) + 'px', top: Math.min(y1, y2) + 'px', width: Math.abs(x2 - x1) + 'px', height: Math.abs(y2 - y1) + 'px' });
+          el.appendChild(d);
+        }
+      });
+    }
+    function repaintHighlights() {
+      if (viewMode === 'single') paintHighlights(currentPage, viewport, $('hl-layer'));
+      else if (isFlow()) flowSlots.forEach(s => { if (s._state === 'done') paintHighlights(+s.dataset.page, s._vp, s.querySelector('.hl-layer')); });
+      else markReflow();
+    }
+    // Reflow: wrap matches in <mark>; the current one gets .cur (matched by page + order on that page)
+    function markReflow() {
+      const needle = search.q.toLowerCase().replace(/\s+/g, ' ');
+      const cur = search.results[search.idx];
+      reflowEl.querySelectorAll('section').forEach(sec => {
+        const page = +sec.dataset.page;
+        let ord = 0;
+        sec.querySelectorAll('p').forEach(p => {
+          const text = p.textContent;
+          p.textContent = '';
+          if (!needle) { p.textContent = text; return; }
+          const lower = text.toLowerCase();
+          let from = 0, at;
+          while ((at = lower.indexOf(needle, from)) !== -1) {
+            p.append(text.slice(from, at));
+            const m = document.createElement('mark');
+            m.textContent = text.slice(at, at + needle.length);
+            if (cur && cur.page === page && cur.ord === ord) m.className = 'cur';
+            ord++;
+            p.appendChild(m);
+            from = at + needle.length;
+          }
+          p.append(text.slice(from));
+        });
+      });
+    }
+    let searchT;
+    $('search-btn').onclick = () => $('search-bar').classList.contains('show') ? closeSearch() : openSearch();
+    $('search-close').onclick = closeSearch;
+    $('search-input').addEventListener('input', e => { clearTimeout(searchT); searchT = setTimeout(() => runSearch(e.target.value), 300); });
+    $('search-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const q = e.target.value.trim();
+        if (q !== search.q) { clearTimeout(searchT); runSearch(q); }
+        else showMatch(search.idx + (e.shiftKey ? -1 : 1));
+      } else if (e.key === 'Escape') closeSearch();
+    });
+    $('search-next').onclick = () => showMatch(search.idx + 1);
+    $('search-prev').onclick = () => showMatch(search.idx - 1);
+
+    // ---- Side panel: thumbnails & bookmarks ----
+    let thumbsVersion = -1, outlineVersion = -1, thumbObserver = null, drawerTab = 'thumbs';
+    function openDrawer(tab = drawerTab) {
+      $('drawer').classList.add('open');
+      setDrawerTab(tab);
+    }
+    function closeDrawer() { $('drawer').classList.remove('open'); }
+    function setDrawerTab(tab) {
+      drawerTab = tab;
+      document.querySelectorAll('.drawer-head .tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      $('thumbs').style.display = tab === 'thumbs' ? '' : 'none';
+      $('outline').style.display = tab === 'outline' ? '' : 'none';
+      refreshDrawer();
+    }
+    function refreshDrawer() { if (drawerTab === 'thumbs') buildThumbs(); else buildOutline(); }
+    const narrow = () => window.innerWidth < 900;
+    $('panel-btn').onclick = () => $('drawer').classList.contains('open') ? closeDrawer() : openDrawer();
+    $('drawer-close').onclick = closeDrawer;
+    $('drawer-scrim').onclick = closeDrawer;
+    document.querySelectorAll('.drawer-head .tab').forEach(b => b.onclick = () => setDrawerTab(b.dataset.tab));
+
+    function buildThumbs() {
+      if (thumbsVersion === docVersion) { markThumb(true); return; }
+      thumbsVersion = docVersion;
+      const list = $('thumbs');
+      list.textContent = '';
+      if (thumbObserver) thumbObserver.disconnect();
+      thumbObserver = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) renderThumb(e.target); }), { root: list, rootMargin: '400px' });
+      for (let i = 1; i <= totalPages; i++) {
+        const b = document.createElement('button');
+        b.className = 'thumb'; b.dataset.page = i;
+        const img = document.createElement('div'); img.className = 'thumb-img';
+        const label = document.createElement('span'); label.textContent = i;
+        b.append(img, label);
+        b.onclick = () => { goToPage(i); if (narrow()) closeDrawer(); };
+        list.appendChild(b);
+        thumbObserver.observe(b);
+      }
+      markThumb(true);
+    }
+    async function renderThumb(b) {
+      if (b._done) return;
+      b._done = true;
+      const v = docVersion;
+      try {
+        const page = await pdfDoc.getPage(+b.dataset.page);
+        if (v !== docVersion) return;
+        const vp1 = page.getViewport({ scale: 1 });
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const vp = page.getViewport({ scale: (120 / vp1.width) * dpr });
+        const c = document.createElement('canvas');
+        c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+        await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+        if (v !== docVersion) return;
+        const box = b.querySelector('.thumb-img');
+        box.textContent = ''; box.style.minHeight = '0';
+        box.appendChild(c);
+      } catch { b._done = false; }
+    }
+    function markThumb(scroll = false) {
+      const list = $('thumbs');
+      if (!list.children.length) return;
+      list.querySelectorAll('.thumb.current').forEach(t => t.classList.remove('current'));
+      const t = list.querySelector(`.thumb[data-page="${currentPage}"]`);
+      if (t) { t.classList.add('current'); if (scroll && $('drawer').classList.contains('open')) t.scrollIntoView({ block: 'nearest' }); }
+    }
+
+    async function buildOutline() {
+      if (outlineVersion === docVersion) return;
+      outlineVersion = docVersion;
+      const el = $('outline');
+      el.textContent = 'Loading…';
+      let items = null;
+      try { items = await pdfDoc.getOutline(); } catch {}
+      el.textContent = '';
+      if (!items || !items.length) {
+        const d = document.createElement('div'); d.className = 'drawer-empty';
+        d.textContent = 'This PDF has no bookmarks.';
+        el.appendChild(d);
+        return;
+      }
+      const add = (list, depth) => list.forEach(it => {
+        const b = document.createElement('button');
+        b.className = 'outline-item';
+        b.style.paddingLeft = (0.6 + depth * 1.1) + 'rem';
+        b.textContent = it.title || '(untitled)';
+        if (it.bold) b.style.fontWeight = '700';
+        if (it.italic) b.style.fontStyle = 'italic';
+        b.onclick = () => {
+          if (it.dest) goToDest(it.dest);
+          else if (it.url) window.open(it.url, '_blank', 'noopener');
+          if (narrow()) closeDrawer();
+        };
+        el.appendChild(b);
+        if (it.items && it.items.length) add(it.items, depth + 1);
+      });
+      add(items, 0);
+    }
+
+    // ---- Navigation, zoom, keyboard ----
+    const step = () => viewMode === 'two' ? 2 : 1;
+    $('prev').onclick = () => { if (currentPage > 1) goToPage(currentPage - step()); };
+    $('next').onclick = () => { if (currentPage < totalPages) goToPage(currentPage + step()); };
+    $('page-info').onclick = () => {
+      if (!pdfDoc) return;
+      $('goto-input').max = totalPages;
+      $('goto-input').value = currentPage;
+      openModal('goto-modal');
+      setTimeout(() => { $('goto-input').focus(); $('goto-input').select(); }, 50);
+    };
+    const doGoto = () => { closeModal('goto-modal'); goToPage(+$('goto-input').value); };
+    $('goto-go').onclick = doGoto;
+    $('goto-input').addEventListener('keydown', e => { if (e.key === 'Enter') doGoto(); });
     document.addEventListener('keydown', e => {
-      if (!pdfDoc || e.target.matches('input, select, textarea')) return;
+      if (!pdfDoc) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === 'f') { e.preventDefault(); openSearch(); return; }
+      if (mod && e.key.toLowerCase() === 'p') { e.preventDefault(); $('print-btn').click(); return; }
+      if (e.target.matches('input, select, textarea')) return;
       if (e.key === 'ArrowLeft') $('prev').click();
       if (e.key === 'ArrowRight') $('next').click();
     });
-    const setZoom = z => { zoom = Math.min(4, Math.max(0.5, z)); renderPage(); };
+    const setZoom = z => { zoom = Math.min(4, Math.max(0.5, z)); renderView(); };
     $('zoom-in').onclick = () => setZoom(zoom * 1.25);
     $('zoom-out').onclick = () => setZoom(zoom / 1.25);
     $('zoom-label').onclick = () => setZoom(1);
-    let resizeT;
-    window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(renderPage, 200); });
+    // Re-render on width changes only (mobile URL bars fire resize on scroll)
+    let resizeT, lastWidth = window.innerWidth;
+    window.addEventListener('resize', () => {
+      updateHeaderVar();
+      clearTimeout(resizeT);
+      resizeT = setTimeout(() => { if (window.innerWidth !== lastWidth) { lastWidth = window.innerWidth; renderView(); } }, 200);
+    });
+    updateHeaderVar();
+
+    // ---- Print ----
+    // Pages are rendered to images at print resolution, so drawings and signatures print exactly as shown.
+    async function pageCanvas(n, scale) {
+      const page = await pdfDoc.getPage(n);
+      const vp = page.getViewport({ scale });
+      const c = document.createElement('canvas');
+      c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+      const g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      await page.render({ canvasContext: g, viewport: vp, intent: 'print' }).promise;
+      return c;
+    }
+    $('print-btn').onclick = () => run('Print', async () => {
+      if (!pdfDoc) return;
+      if (hasInk() && !signed) await editPdf(null);
+      const root = $('print-root');
+      root.textContent = '';
+      for (let i = 1; i <= totalPages; i++) {
+        setStatus(`Preparing to print… ${i} / ${totalPages}`, 0);
+        const page = await pdfDoc.getPage(i);
+        const vp1 = page.getViewport({ scale: 1 });
+        const scale = Math.min(150 / 72, Math.sqrt(9e6 / (vp1.width * vp1.height)));
+        const c = await pageCanvas(i, scale);
+        const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+        const img = new Image();
+        img.src = URL.createObjectURL(blob);
+        img.alt = `Page ${i}`;
+        root.appendChild(img);
+      }
+      await Promise.all([...root.querySelectorAll('img')].map(img => img.decode().catch(() => {})));
+      statusEl.style.display = 'none';
+      window.print();
+    });
+    window.addEventListener('afterprint', () => {
+      const root = $('print-root');
+      root.querySelectorAll('img').forEach(img => URL.revokeObjectURL(img.src));
+      root.textContent = '';
+    });
 
     // ---------- Drawing (ink) ----------
     function setDrawing(on) {
@@ -756,11 +1519,14 @@
       $('draw-btn').classList.toggle('active', on);
       $('draw-btn').textContent = on ? 'Drawing' : 'Draw';
       $('draw-bar').classList.toggle('show', on);
+      if (!on) leaveEditing();
     }
-    $('draw-btn').onclick = () => {
-      if (!drawingMode && signed) { lockedNotice(); return; }
-      if (!drawingMode) endPlacement();
-      setDrawing(!drawingMode);
+    $('draw-btn').onclick = async () => {
+      if (drawingMode) { setDrawing(false); return; }
+      if (signed) { lockedNotice(); return; }
+      endPlacement();
+      await enterSingleForEditing();
+      setDrawing(true);
     };
     $('done-ink').onclick = () => setDrawing(false);
     $('undo-ink').onclick = () => { const s = ink[currentPage]; if (s && s.length) { s.pop(); redrawInk(); } };
@@ -923,7 +1689,8 @@
       startPlacement(sig);
     };
 
-    function startPlacement(sig) {
+    async function startPlacement(sig) {
+      await enterSingleForEditing();
       const w = Math.min(viewport.width * 0.4, 220), h = w / sig.aspect;
       placement = { ...sig, w, h, x: viewport.width - w - 24, y: viewport.height - h - 40 };
       sigOverlay.src = sig.url;
@@ -933,9 +1700,11 @@
       setStatus('Drag the signature into place, then tap Apply. You can change pages first.', 4000);
     }
     function endPlacement() {
+      const was = !!placement;
       placement = null;
       sigOverlay.style.display = 'none';
       $('place-bar').classList.remove('show');
+      if (was) leaveEditing();
     }
     function positionOverlay() {
       const p = placement;
@@ -1118,7 +1887,8 @@
       ocrOut.textContent = 'Processing…';
       try {
         if (!window.Tesseract) await loadScript('vendor/tesseract.min.js');
-        const { data: { text } } = await Tesseract.recognize(canvas, ocrLang, {
+        const src = await pageCanvas(currentPage, 2);
+        const { data: { text } } = await Tesseract.recognize(src, ocrLang, {
           logger: m => { if (m.status === 'recognizing text') setStatus(`OCR ${Math.round(m.progress * 100)}%`, 0); }
         });
         ocrOut.textContent = text || '(no text found)';

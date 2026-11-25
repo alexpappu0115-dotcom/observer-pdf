@@ -3,7 +3,11 @@
 Local-first PDF studio aiming to replace Adobe Acrobat and DocuSign. Everything runs in the browser. Your documents only leave the device when you choose to save them to Google Drive, and then they go straight to your own Google account.
 
 ## Features
-- Open & view multi-page PDFs with zoom and sharp (high-DPI) rendering
+- **View & read**: sharp high-DPI rendering, zoom, and four reading modes: single page, continuous scroll, two-page spreads, and reflow (the text re-flowed for phones)
+- **Search**: full-text search across all pages with highlighted matches and next/previous (Ctrl/Cmd+F)
+- **Navigate**: page thumbnails, bookmarks (the PDF's outline), clickable internal and web links, tap the page number to jump to any page
+- **Select & copy text** on any page with a text layer
+- **Print** every page exactly as shown, including your drawings and signatures (Ctrl/Cmd+P)
 - **Draw** freehand annotations in black, blue or red, with undo. Strokes are written into the PDF as vector lines when you save
 - **Place signature**: draw your signature once (it's remembered), then drag and resize it anywhere on any page, including rotated pages
 - **Digitally sign** (PKCS#7 / PAdES-style, via zgapdfsigner)
