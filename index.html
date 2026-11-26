@@ -21,21 +21,21 @@
        --------------------------------------------------------------- */
     :root {
       color-scheme: dark;
-      --accent: #c6a36a;
+      --accent: #c4a574;
       --accent-ink: #141311;          /* text drawn on top of the accent */
-      --danger: #b55245;
+      --danger: #c45c4a;
       --bg: #0c0d0f;
-      --surface: #141311;             /* header and bottom bar */
-      --panel: #1a1b1e;
-      --elev: #222326;
-      --elev2: #2d2e33;
-      --border: #2a2a2a;
-      --border-soft: #333;
+      --surface: #111214;             /* top bar */
+      --panel: #16181b;               /* cards and panels */
+      --elev: #1c1e22;                /* raised controls */
+      --elev2: #26282d;
+      --border: #2a2c30;
+      --border-soft: #313339;
       --text: #eceae6;
-      --strong: #f4f0e8;              /* headings and emphasis */
-      --dim: #aaa;
-      --dim2: #8f8f8f;
-      --viewer-bg: #0a0a0a;
+      --strong: #f6f4f0;              /* headings and emphasis */
+      --dim: #9a9690;
+      --dim2: #817d78;
+      --viewer-bg: #0a0b0c;
       --warn-bg: #2a2116;
       --warn-bg2: #4a3720;
       --shadow: rgba(0,0,0,0.6);
@@ -43,10 +43,10 @@
       --scrim: rgba(0,0,0,0.78);
       --scrim-soft: rgba(0,0,0,0.4);
       --ui-scale: 1;
-      --accent-tint: rgba(198,163,106,0.10);
-      --accent-tint: color-mix(in srgb, var(--accent) 10%, transparent);
-      --accent-tint-strong: rgba(198,163,106,0.20);
-      --accent-tint-strong: color-mix(in srgb, var(--accent) 20%, transparent);
+      --accent-tint: rgba(196,165,116,0.18);
+      --accent-tint: color-mix(in srgb, var(--accent) 18%, transparent);
+      --accent-tint-strong: rgba(196,165,116,0.28);
+      --accent-tint-strong: color-mix(in srgb, var(--accent) 28%, transparent);
       --accent-line: color-mix(in srgb, var(--accent) 35%, var(--border));
       /* Legacy names kept so existing rules keep working */
       --ink: var(--surface);
@@ -89,69 +89,317 @@
       flex-direction: column;
       padding-bottom: env(safe-area-inset-bottom);
     }
+    /* =============================================================
+       Shell: home screen, document top bar, floating tool pill,
+       slide-over panels, annotation inspector, busy overlay.
+       Dismiss controls sit on the leading edge throughout.
+       ============================================================= */
+
+    .hidden { display: none !important; }
+    body.locked-scroll { overflow: hidden; }
+
+    /* ---- Top bar ------------------------------------------------ */
     header {
-      background: var(--ink);
-      padding: calc(0.7rem + env(safe-area-inset-top)) 1rem 0.7rem;
+      background: var(--surface);
+      padding: env(safe-area-inset-top) 0 0;
       display: block;
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 100;
     }
+    .topbar {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0 0.5rem 0 0.35rem;
+    }
+    .home-only { display: flex; }
+    body.has-doc .home-only { display: none; }
+    .doc-only { display: none !important; }
+    body.has-doc .doc-only { display: flex !important; }
+    body.has-doc .doc-only.inline { display: inline-flex !important; }
+
+    /* Leading dismiss: a round target big enough for a thumb */
+    .close-x {
+      width: 40px; height: 40px; flex-shrink: 0;
+      border-radius: 50%;
+      background: transparent; border: none;
+      color: var(--accent); font-size: 1.35rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0;
+    }
+    .close-x:hover { background: var(--accent-tint); }
+
+    .filename {
+      flex: 1; min-width: 0;
+      font-weight: 500; font-size: 0.95rem; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .filename.is-dirty::after { content: ' \2022'; color: var(--accent); }
+    .top-actions { display: flex; gap: 0.15rem; align-items: center; flex-shrink: 0; }
+    .top-actions button {
+      background: transparent; border: none; color: var(--text);
+      padding: 0.5rem 0.65rem; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 500; cursor: pointer;
+      min-height: 40px;
+    }
+    .top-actions button:hover { background: var(--accent-tint); color: var(--accent); }
+    .top-actions button:disabled { opacity: 0.4; }
+    .top-actions button:disabled:hover { background: transparent; color: var(--text); }
+
     .logo {
       font-family: Georgia, serif;
-      font-size: 1.45rem;
-      font-weight: 700;
-      color: var(--brass);
-      letter-spacing: -0.3px;
-      white-space: nowrap;
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--accent); letter-spacing: -0.3px; white-space: nowrap;
+      flex: 1; padding-left: 0.5rem;
     }
-    .logo span { font-size: 0.7rem; color: var(--cream); margin-left: 0.4rem; font-weight: 400; opacity: 0.8; }
-    .header-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-    .header-left { display: flex; align-items: center; gap: 0.2rem; min-width: 0; }
-    .header-actions { display: flex; gap: 0.35rem; align-items: center; }
-    .doc-only { display: none !important; }
-    body.has-doc .doc-only { display: inline-flex !important; }
-    .icon-btn svg { width: 20px; height: 20px; display: block; }
-    .view-bar { display: none; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.45rem; flex-wrap: wrap; }
+    .logo span { font-size: 0.68rem; color: var(--dim); margin-left: 0.35rem; font-weight: 400; }
+
+    /* Second row: zoom, reading mode, page navigation, print */
+    .view-bar {
+      display: none; align-items: center; gap: 0.4rem;
+      padding: 0 0.6rem 0.5rem; flex-wrap: wrap; justify-content: center;
+    }
     body.has-doc .view-bar { display: flex; }
     .view-bar select { width: auto; margin: 0; padding: 0.3rem 0.5rem; font-size: 0.8rem; background: var(--elev); }
     .view-bar .small-btn { background: var(--elev); color: var(--text); font-size: 0.78rem; padding: 0.35rem 0.7rem; }
+    .view-sep { width: 1px; height: 20px; background: var(--border); }
     .icon-btn {
-      background: transparent;
-      border: none;
-      color: var(--brass);
-      font-size: 1.2rem;
-      padding: 0.35rem 0.5rem;
-      cursor: pointer;
+      background: transparent; border: none; color: var(--accent);
+      font-size: 1.15rem; padding: 0.35rem 0.5rem; cursor: pointer;
     }
+    .icon-btn svg { width: 20px; height: 20px; display: block; }
     #zoom-controls { display: flex; align-items: center; gap: 0.1rem; }
-    #zoom-label { background: transparent; color: var(--cream); font-size: 0.8rem; font-weight: 500; padding: 0.3rem 0.4rem; min-width: 52px; }
+    #zoom-label { background: transparent; color: var(--strong); font-size: 0.8rem; font-weight: 500; padding: 0.3rem 0.4rem; min-width: 52px; }
 
-    /* Bottom toolbar */
-    .bottom-bar {
+    /* ---- Home --------------------------------------------------- */
+    #start { display: block; overflow-y: auto; flex: 1; }
+    .home { padding: 1.8rem 1.1rem 3rem; max-width: 640px; margin: 0 auto; }
+    .home h1 { font-size: 1.9rem; margin-bottom: 0.3rem; color: var(--strong); font-family: Georgia, serif; }
+    .home .tagline { color: var(--dim); margin-bottom: 1.6rem; font-size: 0.92rem; }
+    .home-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin-bottom: 1.8rem; }
+    .home-actions button {
+      background: var(--elev); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1rem; text-align: left; cursor: pointer; color: var(--text);
+      font-size: 0.85rem; font-weight: 400; min-height: 86px;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .home-actions button:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .home-actions button strong { display: block; margin-bottom: 0.25rem; font-size: 0.95rem; color: var(--strong); }
+    .home-actions button small { color: var(--dim); font-size: 0.76rem; line-height: 1.35; display: block; }
+
+    .recent { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
+    .recent-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .recent-head h4 { color: var(--dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; margin: 0; }
+    .recent-head button { background: transparent; color: var(--dim); font-size: 0.76rem; padding: 0.3rem 0.4rem; font-weight: 500; }
+    .recent-head button:hover { color: var(--accent); }
+    .recent-item {
+      display: flex; align-items: center; gap: 0.7rem; width: 100%;
+      padding: 0.7rem 0.6rem; border-radius: 8px; cursor: pointer;
+      background: transparent; color: var(--text); text-align: left;
+      font-weight: 400; font-size: 0.9rem; min-height: 52px;
+    }
+    .recent-item:hover { background: var(--accent-tint); }
+    .recent-item .ri-main { flex: 1; min-width: 0; }
+    .recent-item .ri-name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+    .recent-item .ri-meta { display: block; font-size: 0.72rem; color: var(--dim); margin-top: 0.12rem; }
+    .recent-item .ri-drop { color: var(--dim); font-size: 1rem; padding: 0.2rem 0.4rem; border-radius: 6px; background: transparent; flex-shrink: 0; }
+    .recent-item .ri-drop:hover { color: var(--danger); background: var(--elev); }
+    .recent-empty { color: var(--dim); font-size: 0.84rem; padding: 0.5rem 0.6rem; line-height: 1.5; }
+
+    /* ---- Document body ------------------------------------------ */
+    #workspace { display: none; flex: 1; flex-direction: column; min-height: 0; }
+    .main { flex: 1; display: flex; overflow: hidden; position: relative; min-height: 0; }
+
+    /* ---- Floating tool pill ------------------------------------- */
+    .tool-pill {
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--ink);
+      bottom: calc(1.1rem + env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%);
+      background: var(--elev); border: 1px solid var(--border);
+      border-radius: 28px; padding: 5px;
+      display: none; gap: 3px; z-index: 90;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      max-width: calc(100vw - 1.2rem);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .tool-pill::-webkit-scrollbar { display: none; }
+    body.has-doc .tool-pill { display: flex; }
+    .tool-pill button {
+      background: transparent; border: none; color: var(--text);
+      padding: 0.6rem 0.9rem; border-radius: 22px;
+      font-size: 0.82rem; font-weight: 500; cursor: pointer;
+      white-space: nowrap; min-height: 44px;
+      transition: background 0.15s, color 0.15s, transform 0.15s;
+    }
+    .tool-pill button:hover { background: var(--accent-tint); color: var(--accent); transform: translateY(-1px); }
+    .tool-pill button.active { background: var(--accent); color: var(--accent-ink); }
+    .tool-pill button.locked { opacity: 0.45; }
+
+    /* ---- Slide-over panels (Settings, Pages) -------------------- */
+    .slideover {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: min(380px, 92vw);
+      background: var(--panel); border-left: 1px solid var(--border);
+      transform: translateX(101%); transition: transform 0.25s ease;
+      z-index: 210; display: flex; flex-direction: column;
+      box-shadow: -8px 0 30px rgba(0,0,0,0.4);
+    }
+    .slideover.open { transform: translateX(0); }
+    .slideover-head {
+      height: 56px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 0.3rem;
+      padding: env(safe-area-inset-top) 0.6rem 0 0.35rem;
+      border-bottom: 1px solid var(--border);
+      box-sizing: content-box;
+    }
+    .slideover-title { flex: 1; font-weight: 600; font-size: 1rem; color: var(--strong); padding-left: 0.3rem; }
+    .slideover-body { flex: 1; overflow-y: auto; padding: 0.4rem 1rem calc(1.4rem + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+    .slideover-foot {
+      flex-shrink: 0; display: flex; gap: 0.5rem;
+      padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom));
       border-top: 1px solid var(--border);
-      padding: 0.6rem 0.8rem calc(0.6rem + env(safe-area-inset-bottom));
+    }
+    .slideover-foot > button { flex: 1; }
+    .scrim { position: fixed; inset: 0; background: var(--scrim-soft); z-index: 205; display: none; }
+    .scrim.open { display: block; }
+
+    /* Accordion sections inside a slide-over */
+    .acc { border-bottom: 1px solid var(--border); }
+    .acc > summary {
+      list-style: none; cursor: pointer;
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.95rem 0.2rem;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--accent);
+      min-height: 48px;
+    }
+    .acc > summary::-webkit-details-marker { display: none; }
+    .acc > summary::after {
+      content: '›'; margin-left: auto; font-size: 1.25rem; color: var(--dim);
+      transform: rotate(90deg); transition: transform 0.18s ease;
+      letter-spacing: 0;
+    }
+    .acc[open] > summary::after { transform: rotate(270deg); }
+    .acc .acc-body { padding: 0 0.2rem 0.9rem; }
+
+    /* ---- Annotation inspector ----------------------------------- */
+    .inspector {
+      position: fixed; z-index: 95;
+      top: calc(var(--header-h, 110px) + 10px); right: 12px;
+      width: 212px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0.7rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
       display: none;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-      justify-content: center;
-      z-index: 90;
     }
-    .bottom-bar.show { display: flex; }
-    .bottom-bar button, .bottom-bar .btn {
-      flex: 1 1 auto;
-      min-width: 64px;
-      padding: 0.55rem 0.4rem;
-      font-size: 0.78rem;
-      border-radius: 8px;
-      text-align: center;
+    .inspector.open { display: block; }
+    .inspector .insp-head { display: flex; align-items: center; margin-bottom: 0.5rem; }
+    .inspector .insp-head strong { flex: 1; font-size: 0.85rem; color: var(--strong); }
+    .inspector .insp-head .close-x { width: 28px; height: 28px; font-size: 1rem; }
+    .inspector .row { display: flex; align-items: center; gap: 0.5rem; min-height: 32px; margin: 0.25rem 0; }
+    .inspector .row label { font-size: 0.74rem; color: var(--dim); width: 3.4rem; flex-shrink: 0; }
+    .inspector .row input[type="range"] { flex: 1; max-width: none; }
+    .inspector .row .val { font-size: 0.72rem; color: var(--dim); width: 2.4rem; text-align: right; font-variant-numeric: tabular-nums; }
+    .inspector .btn-row { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
+    .inspector .btn-row button { flex: 1; font-size: 0.76rem; padding: 0.45rem 0.3rem; min-height: 38px; }
+    @media (max-width: 620px) {
+      .inspector {
+        left: 10px; right: 10px; width: auto;
+        top: auto; bottom: calc(4.9rem + env(safe-area-inset-bottom));
+        padding: 0.6rem 0.7rem;
+      }
+      .inspector .swatch-row { padding-bottom: 0.2rem; }
+      .inspector .btn-row { margin-top: 0.45rem; }
     }
+
+    /* ---- Busy overlay ------------------------------------------- */
+    .busy-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(10,11,12,0.72);
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      display: none; align-items: center; justify-content: center;
+    }
+    .busy-overlay.open { display: flex; }
+    .busy-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.6rem 1.8rem;
+      text-align: center; min-width: 220px; max-width: 86vw;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    }
+    .spinner {
+      width: 34px; height: 34px; margin: 0 auto 0.9rem;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+    .busy-card .busy-text { font-size: 0.95rem; color: var(--strong); }
+    .busy-card .busy-sub { font-size: 0.8rem; color: var(--dim); margin-top: 0.35rem; line-height: 1.4; }
+
+    /* ---- Pages panel -------------------------------------------- */
+    .page-ops { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-bottom: 0.7rem; }
+    .page-ops button { font-size: 0.76rem; padding: 0.55rem 0.3rem; background: var(--elev); color: var(--text); min-height: 42px; }
+    .page-ops button:hover:not(:disabled) { background: var(--elev2); }
+    .page-ops button:disabled { opacity: 0.4; cursor: default; }
+    .page-sel-note { font-size: 0.76rem; color: var(--dim); margin-bottom: 0.6rem; line-height: 1.4; }
+    .page-rows { display: flex; flex-direction: column; gap: 0.4rem; }
+    .page-row {
+      display: flex; align-items: center; gap: 0.6rem;
+      background: var(--elev); border: 1.5px solid transparent; border-radius: 10px;
+      padding: 0.45rem 0.5rem; cursor: pointer; min-height: 64px;
+      touch-action: pan-y;
+    }
+    .page-row.sel { border-color: var(--accent); background: var(--accent-tint); }
+    .page-row.dragging { opacity: 0.5; }
+    .page-row.drop-before { box-shadow: 0 -3px 0 0 var(--accent); }
+    .page-row.drop-after { box-shadow: 0 3px 0 0 var(--accent); }
+    .page-row .pr-thumb {
+      width: 38px; height: 50px; flex-shrink: 0; background: #fff; border-radius: 3px;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .page-row .pr-thumb canvas { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .page-row .pr-label { flex: 1; font-size: 0.85rem; color: var(--text); }
+    .page-row .pr-label small { display: block; font-size: 0.7rem; color: var(--dim); }
+    .page-row .pr-move { display: flex; flex-direction: column; gap: 2px; }
+    .page-row .pr-move button {
+      background: var(--elev2); color: var(--text); border-radius: 5px;
+      padding: 0; width: 28px; height: 22px; font-size: 0.7rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .page-row .pr-move button:disabled { opacity: 0.3; }
+    .page-row .pr-grip {
+      color: var(--dim); font-size: 1.05rem; padding: 0.3rem 0.2rem; cursor: grab;
+      background: transparent; touch-action: none; min-height: 40px;
+    }
+    .page-row .pr-grip:active { cursor: grabbing; }
+
+    /* ---- Floating search ---------------------------------------- */
+    .search-bar {
+      position: fixed; top: calc(var(--header-h, 110px) + 10px); left: 50%;
+      transform: translateX(-50%); z-index: 96;
+      background: var(--elev); border: 1px solid var(--border); border-radius: 12px;
+      padding: 0.35rem 0.4rem; display: none; gap: 0.3rem; align-items: center;
+      width: min(340px, calc(100vw - 1.5rem));
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    .search-bar.show { display: flex; }
+    .search-bar input { margin: 0; flex: 1; min-width: 0; padding: 0.45rem 0.5rem; font-size: 0.92rem; background: transparent; border: none; }
+    .search-bar input:focus { outline: none; }
+    .search-bar button { padding: 0.4rem 0.5rem; font-size: 0.78rem; background: transparent; color: var(--text); min-height: 38px; }
+    .search-bar button:hover { background: var(--accent-tint); color: var(--accent); }
+    #search-count { font-size: 0.74rem; color: var(--dim); min-width: 3.4rem; text-align: center; white-space: nowrap; }
+
+    /* ---- Sheet header with the dismiss on the leading edge ------- */
+    .sheet-head { padding-left: 0.35rem; }
+    .sheet-head h3 { flex: 1; margin: 0; }
+    .modal .modal-head {
+      display: flex; align-items: center; gap: 0.3rem;
+      margin: -0.4rem -0.3rem 0.8rem -0.6rem;
+    }
+    .modal .modal-head h3 { flex: 1; margin: 0; }
 
     button, .btn {
       background: var(--accent);
@@ -169,22 +417,7 @@
     button.active { background: var(--clay); color: white; }
     button:disabled, button.locked { opacity: 0.45; }
 
-    #dropzone {
-      border: 2px dashed var(--brass);
-      border-radius: 16px;
-      margin: 2rem 1.2rem;
-      padding: 3.5rem 1.5rem;
-      text-align: center;
-      background: var(--accent-tint);
-      cursor: pointer;
-      transition: background 0.2s;
-      display: block;
-    }
-    #dropzone:active { background: var(--accent-tint-strong); }
-    #dropzone h2 { font-size: 1.3rem; margin-bottom: 0.4rem; color: var(--cream); }
-    #dropzone p { color: var(--dim); font-size: 0.95rem; }
-
-    #workspace { display: none; flex: 1; flex-direction: column; padding-bottom: 120px; }
+    #workspace { display: none; flex: 1; flex-direction: column; padding-bottom: 92px; min-height: 0; }
     #viewer-wrap {
       flex: 1;
       overflow: auto;
@@ -239,7 +472,7 @@
     .reflow mark.cur { background: rgba(255, 120, 0, 0.75); }
 
     /* Side panel */
-    .drawer { position: fixed; top: var(--header-h, 64px); bottom: 0; left: 0; width: min(300px, 86vw); background: var(--panel);
+    .drawer { position: fixed; top: var(--header-h, 110px); bottom: 0; left: 0; width: min(300px, 86vw); background: var(--panel);
       border-right: 1px solid var(--border-soft); z-index: 150; transform: translateX(-102%); transition: transform 0.2s ease; display: flex; flex-direction: column; }
     .drawer.open { transform: none; box-shadow: 8px 0 30px var(--shadow); }
     .drawer-scrim { position: fixed; inset: 0; background: var(--scrim-soft); z-index: 140; display: none; }
@@ -257,16 +490,6 @@
     .outline-item { display: block; width: 100%; text-align: left; background: transparent; color: var(--text); font-weight: 400; font-size: 0.88rem; padding: 0.5rem 0.6rem; border-radius: 6px; }
     .outline-item:hover { background: var(--elev); }
     .drawer-empty { color: var(--dim2); font-size: 0.85rem; padding: 0.5rem; }
-
-    /* Search bar */
-    .search-bar { position: fixed; top: var(--header-h, 64px); left: 0; right: 0; z-index: 96; background: var(--panel); border-bottom: 1px solid var(--border-soft);
-      padding: 0.45rem 0.6rem; display: none; gap: 0.35rem; align-items: center; }
-    .search-bar.show { display: flex; }
-    .search-bar input { margin: 0; flex: 1; min-width: 0; padding: 0.5rem 0.6rem; font-size: 0.95rem; }
-    .search-bar button { padding: 0.45rem 0.6rem; font-size: 0.8rem; }
-    #search-count { font-size: 0.78rem; color: var(--dim); min-width: 3.5rem; text-align: center; white-space: nowrap; }
-    body.searching #workspace { padding-top: 54px; }
-    body.searching .float-bar { top: calc(var(--header-h, 64px) + 58px); }
 
     /* Printing: only the rendered pages */
     #print-root { display: none; }
@@ -316,7 +539,7 @@
 
     .float-bar {
       position: fixed;
-      top: var(--header-h, 64px);
+      top: calc(var(--header-h, 110px) + 10px);
       left: 50%;
       transform: translateX(-50%);
       background: var(--panel);
@@ -340,7 +563,7 @@
 
     .status-toast {
       position: fixed;
-      bottom: 120px;
+      bottom: calc(5.4rem + env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%);
       background: var(--panel);
@@ -424,7 +647,6 @@
     .sheet-row { display: flex; gap: 0.5rem; }
     .sheet-row > button { flex: 1; background: var(--elev2); margin-top: 0.5rem; }
     .source-line { font-size: 0.8rem; color: var(--dim); margin: -0.4rem 0 0.6rem; }
-    #start { display: block; }
     .account-btn {
       background: transparent; color: var(--brass); border: 1px solid var(--accent-line);
       padding: 0.3rem 0.65rem; font-size: 0.78rem; border-radius: 16px; white-space: nowrap;
@@ -451,13 +673,11 @@
       #zoom-label { min-width: 40px; padding: 0.3rem 0.2rem; }
       .icon-btn { padding: 0.35rem 0.35rem; }
     }
-    .start-actions { display: flex; gap: 0.6rem; margin: -1rem 1.2rem 1rem; }
     .steps { margin: 0.2rem 0 0.8rem 1.2rem; line-height: 1.5; font-size: 0.92rem; color: var(--text); }
     .steps li { margin: 0.35rem 0; }
     .steps b { color: var(--cream); }
     .check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--dim); margin: 0.4rem 0 0.9rem; }
     .check input { width: auto; margin: 0; }
-    .start-actions button { flex: 1; padding: 0.8rem 0.5rem; }
     /* =============================================================
        Settings panel and the rest of the 2.x interface
        ============================================================= */
@@ -633,12 +853,9 @@
       }
       body.docked.has-doc #drawer + .drawer-scrim { display: none; }
       body.docked.has-doc #workspace, body.docked.has-doc #start { margin-left: 260px; }
-      body.docked.has-doc .bottom-bar { left: 260px; }
+      body.docked.has-doc .tool-pill { left: calc(50% + 130px); }
       body.docked.has-doc #drawer-close { display: none; }
       body.docked.has-doc #thumbs { grid-template-columns: 1fr; }
-      /* Slightly denser toolbars with the extra room */
-      .bottom-bar { padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom)); gap: 0.35rem; }
-      .bottom-bar button { flex: 0 1 auto; min-width: 76px; }
       .modal { border-radius: 18px; margin-bottom: 4vh; }
       .modal-overlay { align-items: center; }
     }
@@ -646,7 +863,6 @@
 
     /* Touch-first sizing on phones */
     @media (max-width: 620px) {
-      .bottom-bar button, .bottom-bar .btn { min-height: 46px; min-width: 60px; }
       .float-bar button { min-height: 42px; }
       .modal { padding-bottom: calc(1.6rem + env(safe-area-inset-bottom)); }
       .sig-actions { grid-template-columns: 1fr; }
@@ -654,31 +870,52 @@
     .eraser-size { font-size: 0.74rem; color: var(--dim); padding: 0 0.2rem; }
     #erase-btn.active { background: var(--danger); color: #fff; }
 
+    /* Hash preview inside the signature sheet */
+    .hash-preview { margin: 0.6rem 0 0.2rem; }
+    .hash-preview .hp-label { display: block; font-size: 0.74rem; color: var(--dim); margin-bottom: 0.25rem; }
+    .hash-preview .hash { font-size: 0.68rem; display: block; }
+
   </style>
 </head>
 <body>
   <header id="app-header">
-    <div class="header-row">
-      <div class="header-left">
-        <button class="icon-btn doc-only" id="panel-btn" title="Pages and bookmarks" aria-label="Pages and bookmarks">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
-        <div class="logo">Observer <span>PDF</span></div>
-      </div>
-      <div class="header-actions">
-        <button class="icon-btn doc-only" id="search-btn" title="Search (Ctrl+F)" aria-label="Search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
-        </button>
+    <!-- Home chrome -->
+    <div class="topbar home-only">
+      <div class="logo">Observer <span>PDF</span></div>
+      <div class="top-actions">
         <button class="account-btn" id="account-btn" title="Sign in with Google">Sign in</button>
         <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
       </div>
     </div>
+
+    <!-- Document chrome: dismiss on the leading edge, then the filename -->
+    <div class="topbar doc-only">
+      <button class="close-x" id="doc-close" title="Close document" aria-label="Close document">✕</button>
+      <div class="filename" id="doc-name">Document</div>
+      <div class="top-actions">
+        <button id="search-btn" title="Search (Ctrl+F)">Search</button>
+        <button id="save-btn" title="Save to where this file came from">Save</button>
+        <button id="reset-btn" title="Discard unsaved changes">Reset</button>
+        <button id="share-btn" title="Export or share">Share</button>
+        <button class="icon-btn" id="settings-btn-doc" title="Settings" aria-label="Settings">⚙</button>
+      </div>
+    </div>
+
     <div class="view-bar" id="view-bar">
+      <button class="icon-btn" id="panel-btn" title="Thumbnails and bookmarks" aria-label="Thumbnails and bookmarks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="view-sep"></div>
       <div id="zoom-controls">
         <button class="icon-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
         <button id="zoom-label" title="Reset zoom">100%</button>
         <button class="icon-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
       </div>
+      <div class="view-sep"></div>
+      <button class="icon-btn" id="prev" aria-label="Previous page">◀</button>
+      <button class="page-info" id="page-info" title="Go to page">1 / 1</button>
+      <button class="icon-btn" id="next" aria-label="Next page">▶</button>
+      <div class="view-sep"></div>
       <select id="view-mode" aria-label="Reading mode">
         <option value="single">Single page</option>
         <option value="continuous">Continuous</option>
@@ -692,16 +929,27 @@
   <input type="file" id="file-input" accept="application/pdf,.pdf">
   <input type="file" id="multi-input" accept="application/pdf,.pdf" multiple>
   <input type="file" id="p12-input" accept=".p12,.pfx,application/x-pkcs12">
+  <input type="file" id="scan-input" accept="image/*" multiple>
+  <input type="file" id="insert-input" accept="application/pdf,.pdf" multiple>
 
+  <!-- Home -->
   <div id="start">
-    <div id="dropzone" role="button" tabindex="0">
-      <h2>Open a PDF</h2>
-      <p>Tap here or drop a file</p>
-      <p style="margin-top:0.8rem; font-size:0.8rem; color:var(--brass);">View · Draw · OCR · Sign · Combine</p>
-    </div>
-    <div class="start-actions">
-      <button class="secondary" id="start-files">Files / iCloud Drive</button>
-      <button class="secondary" id="start-gdrive">Google Drive</button>
+    <div class="home" id="dropzone">
+      <h1>Observer</h1>
+      <p class="tagline">Local PDF studio &middot; nothing is uploaded</p>
+      <div class="home-actions">
+        <button id="home-open"><strong>Open File</strong><small>From this device or any cloud app in Files</small></button>
+        <button id="home-scan"><strong>New from Scan</strong><small>Camera or photos, turned into a PDF</small></button>
+        <button id="home-gdrive"><strong>Google Drive</strong><small id="home-gdrive-hint">Open a PDF from Drive</small></button>
+        <button id="home-icloud"><strong>iCloud / Files</strong><small>Apple ecosystem and On My iPhone</small></button>
+      </div>
+      <div class="recent" id="recent-wrap">
+        <div class="recent-head">
+          <h4>Recent</h4>
+          <button id="recent-clear">Clear</button>
+        </div>
+        <div id="recent-list"></div>
+      </div>
     </div>
   </div>
 
@@ -737,9 +985,9 @@
   <!-- Side panel: thumbnails and bookmarks -->
   <aside id="drawer" class="drawer" aria-label="Pages and bookmarks">
     <div class="drawer-head">
+      <button class="close-x" id="drawer-close" aria-label="Close panel">✕</button>
       <button class="tab active" data-tab="thumbs">Pages</button>
       <button class="tab" data-tab="outline">Bookmarks</button>
-      <button class="icon-btn" id="drawer-close" aria-label="Close panel">✕</button>
     </div>
     <div id="thumbs" class="drawer-body"></div>
     <div id="outline" class="drawer-body" style="display:none;"></div>
@@ -748,12 +996,32 @@
 
   <div id="print-root" aria-hidden="true"></div>
 
-  <!-- Drawing toolbar. The pen swatches are built from the palette in Settings. -->
-  <div id="draw-bar" class="float-bar">
-    <span id="pen-swatches" style="display:flex; gap:0.35rem; align-items:center;"></span>
-    <button class="secondary" id="erase-btn">Erase</button>
-    <button class="secondary" id="undo-ink">Undo</button>
-    <button id="done-ink">Done</button>
+  <!-- Annotation inspector: shown while Draw or Highlight is the active tool.
+       The swatches are built from the palette the tool uses. -->
+  <div id="inspector" class="inspector" aria-label="Annotation settings">
+    <div class="insp-head">
+      <button class="close-x" id="done-ink" aria-label="Finish annotating">✕</button>
+      <strong id="insp-title">Draw</strong>
+    </div>
+    <div class="swatch-row" id="pen-swatches"></div>
+    <div class="row">
+      <label for="insp-width">Width</label>
+      <input type="range" id="insp-width" min="6" max="60" step="2" aria-label="Stroke width">
+      <span class="val" id="insp-width-val">1.6</span>
+    </div>
+    <div class="row">
+      <label for="insp-opacity">Opacity</label>
+      <input type="range" id="insp-opacity" min="10" max="100" step="5" aria-label="Opacity">
+      <span class="val" id="insp-opacity-val">100%</span>
+    </div>
+    <div class="btn-row">
+      <button class="secondary" id="undo-ink" title="Undo (Ctrl+Z)">Undo</button>
+      <button class="secondary" id="redo-ink" title="Redo (Ctrl+Shift+Z)">Redo</button>
+    </div>
+    <div class="btn-row">
+      <button class="secondary" id="erase-btn">Erase</button>
+      <button class="secondary" id="clear-ink">Clear page</button>
+    </div>
   </div>
 
   <!-- Signature placement toolbar -->
@@ -767,23 +1035,58 @@
 
   <div id="status" class="status-toast" role="status"></div>
 
-  <div class="bottom-bar" id="bottom-bar">
-    <button class="secondary" id="open-btn">Open</button>
-    <button class="secondary" id="add-btn">Add</button>
-    <button class="secondary" id="prev" aria-label="Previous page">◀</button>
-    <button class="page-info" id="page-info" title="Go to page">1 / 1</button>
-    <button class="secondary" id="next" aria-label="Next page">▶</button>
-    <button class="secondary" id="ocr-btn">OCR</button>
-    <button class="secondary" id="draw-btn">Draw</button>
-    <button class="secondary" id="sign-btn">Sign</button>
-    <button class="secondary" id="tools-btn">Pages</button>
-    <button id="save-btn">Save</button>
+  <!-- Primary tools. The active one is filled with the accent. -->
+  <div class="tool-pill" id="tool-pill" role="toolbar" aria-label="Tools">
+    <button id="select-btn" class="active">Select</button>
+    <button id="draw-btn">Draw</button>
+    <button id="highlight-btn">Highlight</button>
+    <button id="sign-btn">Sign</button>
+    <button id="ocr-btn">OCR</button>
+    <button id="tools-btn">Pages</button>
   </div>
+
+  <!-- Work that takes a moment blocks the document behind a clear overlay. -->
+  <div id="busy" class="busy-overlay" role="alertdialog" aria-live="assertive" aria-busy="true">
+    <div class="busy-card">
+      <div class="spinner"></div>
+      <div class="busy-text" id="busy-text">Working…</div>
+      <div class="busy-sub" id="busy-sub"></div>
+    </div>
+  </div>
+
+  <div class="scrim" id="panel-scrim"></div>
+
+  <!-- Pages panel -->
+  <aside id="pages-panel" class="slideover" aria-label="Pages">
+    <div class="slideover-head">
+      <button class="close-x" data-closepanel="pages-panel" aria-label="Close pages panel">✕</button>
+      <div class="slideover-title">Pages</div>
+    </div>
+    <div class="slideover-body">
+      <div class="page-ops">
+        <button id="op-insert" title="Insert a blank page after the selection">Insert</button>
+        <button id="op-addfile" title="Append pages from another PDF">Add file</button>
+        <button id="op-rotate" title="Rotate the selected pages">Rotate</button>
+        <button id="op-extract" title="Save the selected pages as a new PDF">Extract</button>
+        <button id="op-duplicate" title="Duplicate the selected pages">Duplicate</button>
+        <button id="op-delete" class="danger" title="Delete the selected pages">Delete</button>
+      </div>
+      <p class="page-sel-note" id="page-sel-note">Tap pages to select them. Drag the grip, or use the arrows, to reorder.</p>
+      <div class="page-rows" id="page-rows"></div>
+    </div>
+    <div class="slideover-foot">
+      <button class="secondary" id="pages-selall">Select all</button>
+      <button data-closepanel="pages-panel">Done</button>
+    </div>
+  </aside>
 
   <!-- Google Drive through the device (no sign-in needed) -->
   <div id="gdrive-help-modal" class="modal-overlay">
     <div class="modal">
-      <h3 id="gh-title">Open from Google Drive</h3>
+      <div class="modal-head">
+        <button class="close-x" data-close="gdrive-help-modal" aria-label="Close">✕</button>
+        <h3 id="gh-title">Open from Google Drive</h3>
+      </div>
       <ol id="gh-steps" class="steps"></ol>
       <label class="check"><input type="checkbox" id="gh-skip"> Don't show this again</label>
       <div class="row-buttons">
@@ -796,7 +1099,10 @@
   <!-- Go to page -->
   <div id="goto-modal" class="modal-overlay">
     <div class="modal">
-      <h3>Go to page</h3>
+      <div class="modal-head">
+        <button class="close-x" data-close="goto-modal" aria-label="Close">✕</button>
+        <h3>Go to page</h3>
+      </div>
       <input type="number" id="goto-input" inputmode="numeric" min="1" enterkeyhint="go">
       <div class="row-buttons">
         <button class="secondary" data-close="goto-modal">Cancel</button>
@@ -808,7 +1114,10 @@
   <!-- Signature sheet -->
   <div id="sig-modal" class="modal-overlay">
     <div class="modal">
-      <h3>Sign</h3>
+      <div class="modal-head">
+        <button class="close-x" data-close="sig-modal" aria-label="Close">✕</button>
+        <h3>Sign</h3>
+      </div>
       <p class="sig-hint">Draw your signature once — it is remembered on this device.</p>
       <canvas id="sig-pad"></canvas>
       <div class="sig-fields">
@@ -820,6 +1129,10 @@
           <input type="text" id="sign-reason" placeholder="Reason (optional)">
           <input type="text" id="sign-location" placeholder="Location (optional)">
           <input type="text" id="sign-contact" placeholder="Contact / email (optional)">
+        </div>
+        <div class="hash-preview" id="hash-preview" style="display:none;">
+          <span class="hp-label">SHA-256 of what will be signed</span>
+          <code class="hash" id="hp-value">…</code>
         </div>
         <label class="check-row">
           <span class="lbl">Audit certificate page<small id="audit-sub">A summary page added before signing, so the signature covers it</small></span>
@@ -833,31 +1146,20 @@
       <div class="sig-actions">
         <button class="secondary" id="apply-visual">Place signature</button>
         <button id="apply-cert">Digitally sign</button>
-        <button class="secondary" id="clear-sig">Clear drawing</button>
-        <button class="secondary" data-close="sig-modal">Cancel</button>
+        <button class="secondary wide" id="clear-sig">Clear drawing</button>
       </div>
       <p class="note"><b>Place signature</b> stamps your drawn signature where you choose on the page.<br>
         <b>Digitally sign</b> seals the document with your Digital ID (Settings → Digital ID) and records a SHA-256 hash of what was signed. Do it last, because any later edit invalidates it.</p>
     </div>
   </div>
 
-  <!-- Tools Modal -->
-  <div id="tools-modal" class="modal-overlay">
-    <div class="modal">
-      <h3>Page Tools</h3>
-      <button class="secondary" style="width:100%; margin:0.4rem 0;" id="rotate-btn">Rotate Page 90°</button>
-      <button class="secondary" style="width:100%; margin:0.4rem 0;" id="delete-page-btn">Delete Page</button>
-      <button class="secondary" style="width:100%; margin:0.4rem 0;" id="combine-btn">Combine Loaded PDFs</button>
-      <div id="file-list"></div>
-      <p class="note">Use Add to load more PDFs. Combine appends them after the current document, including your edits.</p>
-      <button class="secondary" style="width:100%;" data-close="tools-modal">Close</button>
-    </div>
-  </div>
-
   <!-- Open Modal -->
   <div id="open-modal" class="modal-overlay">
     <div class="modal">
-      <h3 id="open-title">Open a PDF</h3>
+      <div class="modal-head">
+        <button class="close-x" data-close="open-modal" aria-label="Close">✕</button>
+        <h3 id="open-title">Open a PDF</h3>
+      </div>
       <button class="sheet-btn" id="open-files"><span class="ico">📁</span><span>Files / iCloud Drive<small>Your device, iCloud Drive, and any cloud app shown in Files</small></span></button>
       <button class="sheet-btn" id="open-gdrive"><span class="ico">△</span><span>Google Drive<small id="open-gdrive-hint">Sign in with Google and pick a file</small></span></button>
       <p class="note">Dropbox, OneDrive and Box work the same way through Files when their apps are installed.</p>
@@ -868,9 +1170,22 @@
   <!-- Save Modal -->
   <div id="save-modal" class="modal-overlay">
     <div class="modal">
-      <h3>Save</h3>
+      <div class="modal-head">
+        <button class="close-x" data-close="save-modal" aria-label="Close">✕</button>
+        <h3 id="save-title">Export / Share</h3>
+      </div>
       <div class="source-line" id="save-source"></div>
-      <label for="save-name" style="font-size:0.85rem; color:#aaa;">File name</label>
+      <div class="srow" style="border:0; padding-top:0;">
+        <span class="lbl">Format</span>
+        <span class="ctl">
+          <span class="seg" id="export-format" role="group" aria-label="Export format">
+            <button type="button" data-val="keep">Annotations</button>
+            <button type="button" data-val="flatten">Flatten</button>
+          </span>
+        </span>
+      </div>
+      <p class="note" id="export-format-note" style="margin-top:-0.2rem;"></p>
+      <label for="save-name" style="font-size:0.85rem; color:var(--dim);">File name</label>
       <input type="text" id="save-name" autocomplete="off" spellcheck="false">
       <button class="sheet-btn primary" id="save-original"><span class="ico">↺</span><span id="save-original-label">Save over original</span></button>
       <button class="sheet-btn" id="save-files"><span class="ico">📁</span><span>Save to Files / iCloud Drive<small id="save-files-hint">Choose iCloud Drive or another location</small></span></button>
@@ -890,7 +1205,10 @@
   <!-- Google account / Drive Modal -->
   <div id="google-modal" class="modal-overlay">
     <div class="modal">
-      <h3 id="g-title">Google account</h3>
+      <div class="modal-head">
+        <button class="close-x" data-close="google-modal" aria-label="Close">✕</button>
+        <h3 id="g-title">Google account</h3>
+      </div>
       <div id="g-user" class="g-user"></div>
       <button class="sheet-btn primary" id="g-signin"><span class="ico">G</span><span id="g-signin-label">Sign in with Google</span></button>
       <div id="g-drive" style="display:none;">
@@ -906,17 +1224,17 @@
     </div>
   </div>
 
-  <!-- Settings panel: a bottom sheet on phones, a centred card on wide screens -->
-  <div id="settings-modal" class="modal-overlay">
-    <div class="modal tall">
-      <div class="sheet-head">
-        <h3>Settings</h3>
-        <button class="icon-btn" data-close="settings-modal" aria-label="Close settings">✕</button>
-      </div>
-      <div class="sheet-scroll">
+  <!-- Settings: a slide-over with collapsible sections, dismiss on the leading edge -->
+  <aside id="settings-panel" class="slideover" aria-label="Settings">
+    <div class="slideover-head">
+      <button class="close-x" data-closepanel="settings-panel" aria-label="Close settings">✕</button>
+      <div class="slideover-title">Settings</div>
+    </div>
+    <div class="slideover-body">
 
-        <div class="sec">
-          <h4>Appearance</h4>
+      <details class="acc" open>
+        <summary>Appearance</summary>
+        <div class="acc-body">
           <div class="srow">
             <span class="lbl">Theme</span>
             <span class="ctl">
@@ -932,7 +1250,7 @@
             <div class="swatch-row" id="set-accent"></div>
           </div>
           <div class="srow">
-            <span class="lbl">Font size<small id="font-size-note">Scales the whole interface</small></span>
+            <span class="lbl">Font size<small>Scales the whole interface</small></span>
             <span class="ctl">
               <input type="range" id="set-fontsize" min="85" max="130" step="5" aria-label="Font size">
               <span class="range-val" id="fontsize-val">100%</span>
@@ -943,9 +1261,11 @@
             <span class="ctl"><span class="sw"><input type="checkbox" id="set-pagenums"><i></i></span></span>
           </div>
         </div>
+      </details>
 
-        <div class="sec">
-          <h4>Signing defaults</h4>
+      <details class="acc">
+        <summary>Signing defaults</summary>
+        <div class="acc-body">
           <div class="sfield">
             <label for="default-name">Default signer name</label>
             <input type="text" id="default-name" placeholder="Your name" autocomplete="name">
@@ -967,13 +1287,38 @@
             <span class="ctl"><span class="sw"><input type="checkbox" id="set-auditpage"><i></i></span></span>
           </div>
           <div class="srow">
+            <span class="lbl">Show hash before signing<small>Preview the SHA-256 of what you are about to sign</small></span>
+            <span class="ctl"><span class="sw"><input type="checkbox" id="set-showhash"><i></i></span></span>
+          </div>
+          <div class="srow">
             <span class="lbl">Request timestamp by default<small>RFC 3161 — the only feature that contacts a server. It sends a hash, never the document, and is skipped if the server refuses browser requests</small></span>
             <span class="ctl"><span class="sw"><input type="checkbox" id="set-timestamp"><i></i></span></span>
           </div>
         </div>
+      </details>
 
-        <div class="sec">
-          <h4>Drawing &amp; annotation</h4>
+      <details class="acc">
+        <summary>Cloud storage</summary>
+        <div class="acc-body">
+          <div class="srow">
+            <span class="lbl">Google Drive<small id="gdrive-state">Not connected</small></span>
+            <span class="ctl"><button id="settings-google">Connect</button></span>
+          </div>
+          <p class="note">Connecting is optional and entirely separate from iCloud. Observer only ever sees the Drive files you pick or create with it, and the sign-in token is kept in memory, never stored.</p>
+          <div class="srow">
+            <span class="lbl">iCloud Drive / Files<small>Through the system file picker and share sheet</small></span>
+            <span class="ctl"><span style="font-size:0.8rem;color:var(--dim);">Always available</span></span>
+          </div>
+          <div class="srow">
+            <span class="lbl">Fully local only<small>Hides every cloud destination and never contacts a timestamp server</small></span>
+            <span class="ctl"><span class="sw"><input type="checkbox" id="set-localonly"><i></i></span></span>
+          </div>
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary>Drawing &amp; annotation</summary>
+        <div class="acc-body">
           <div class="sfield">
             <label>Default pen colour</label>
             <div class="swatch-row" id="set-pen"></div>
@@ -985,17 +1330,30 @@
               <span class="range-val" id="stroke-val">1.6 pt</span>
             </span>
           </div>
+          <div class="sfield">
+            <label>Default highlighter colour</label>
+            <div class="swatch-row" id="set-hl"></div>
+          </div>
           <div class="srow">
-            <span class="lbl">Eraser size<small>Erase in the drawing bar removes strokes not yet written into the PDF</small></span>
+            <span class="lbl">Highlighter width</span>
+            <span class="ctl">
+              <input type="range" id="set-hlwidth" min="60" max="320" step="20" aria-label="Highlighter width (tenths of a point)">
+              <span class="range-val" id="hlwidth-val">14 pt</span>
+            </span>
+          </div>
+          <div class="srow">
+            <span class="lbl">Eraser size<small>Erase in the inspector removes strokes not yet written into the PDF</small></span>
             <span class="ctl">
               <input type="range" id="set-eraser" min="6" max="60" step="2" aria-label="Eraser size">
               <span class="range-val" id="eraser-val">18 px</span>
             </span>
           </div>
         </div>
+      </details>
 
-        <div class="sec">
-          <h4>OCR</h4>
+      <details class="acc">
+        <summary>OCR</summary>
+        <div class="acc-body">
           <div class="srow">
             <span class="lbl">Language</span>
             <span class="ctl">
@@ -1012,9 +1370,11 @@
             <span class="ctl"><span class="sw"><input type="checkbox" id="set-autoocr"><i></i></span></span>
           </div>
         </div>
+      </details>
 
-        <div class="sec">
-          <h4>Viewer</h4>
+      <details class="acc">
+        <summary>Viewer</summary>
+        <div class="acc-body">
           <div class="srow">
             <span class="lbl">Default reading mode</span>
             <span class="ctl">
@@ -1043,9 +1403,11 @@
             <span class="ctl"><span class="sw"><input type="checkbox" id="set-sidebar"><i></i></span></span>
           </div>
         </div>
+      </details>
 
-        <div class="sec">
-          <h4>Digital ID</h4>
+      <details class="acc">
+        <summary>Digital ID</summary>
+        <div class="acc-body">
           <div id="id-status"></div>
           <p class="note">Without an imported certificate, Observer creates a self-signed Digital ID per name and keeps it on this device, so all your signatures share one identity. Acrobat will show it as "identity unknown" until the recipient trusts it. Import a certificate from a trusted provider (.p12 / .pfx) to get signatures Acrobat validates automatically.</p>
           <div class="sfield">
@@ -1058,24 +1420,30 @@
             <button class="secondary" id="remove-id">Remove imported</button>
           </div>
         </div>
+      </details>
 
-        <div class="sec" id="settings-google-wrap">
-          <h4>Google account</h4>
-          <button class="secondary" id="settings-google" style="width:100%;">Manage Google sign-in</button>
-        </div>
-
-        <div class="sec">
-          <h4>Privacy &amp; data</h4>
+      <details class="acc">
+        <summary>Privacy &amp; data</summary>
+        <div class="acc-body">
           <p class="note">Everything happens on this device: rendering, OCR, drawing and signing. Files only leave it when you save them somewhere yourself. The one exception is the optional RFC 3161 timestamp, which sends a hash — never the document — to a public timestamp server. If that server does not allow browser requests, Observer simply signs without it.</p>
-          <div class="row-buttons">
-            <button class="secondary" id="export-settings">Export settings</button>
-            <button class="secondary" id="clear-data">Clear local data…</button>
+          <div class="srow">
+            <span class="lbl">Keep recent documents<small>Stores opened PDFs in this browser so Recent can reopen them, including on iPhone</small></span>
+            <span class="ctl"><span class="sw"><input type="checkbox" id="set-recents"><i></i></span></span>
           </div>
-          <p class="note">Clearing removes your settings, saved signature drawing and Digital IDs from this browser. Back up your Digital ID first if you still need it.</p>
+          <div class="row-buttons">
+            <button class="secondary" id="clear-recents">Clear recents</button>
+            <button class="secondary" id="export-settings">Export settings</button>
+          </div>
+          <div class="row-buttons" style="margin-top:0.5rem;">
+            <button class="secondary danger" id="clear-data" style="width:100%;">Clear all local data…</button>
+          </div>
+          <p class="note">Clearing removes your settings, saved signature drawing, recent documents and Digital IDs. Back up your Digital ID first if you still need it.</p>
         </div>
+      </details>
 
-        <div class="sec">
-          <h4>About</h4>
+      <details class="acc">
+        <summary>About</summary>
+        <div class="acc-body">
           <div class="srow">
             <span class="lbl">Observer PDF Studio<small id="about-version">Version —</small></span>
             <span class="ctl"><a class="btn secondary" id="about-repo" href="https://github.com/alexpappu0115-dotcom/observer-pdf" target="_blank" rel="noopener">GitHub</a></span>
@@ -1083,19 +1451,22 @@
           <p class="note">A local-first PDF studio: read, search, annotate, OCR and digitally sign without uploading anything.</p>
           <p class="note"><b>On signature trust:</b> Observer signs with PKCS#7 detached (adbe.pkcs7.detached) and SHA-256. A self-signed Digital ID is cryptographically sound — it proves the file has not changed since signing — but no public authority vouches for who holds it, so Acrobat shows "signature validity is unknown" until the recipient trusts the certificate. It is not on the Adobe Approved Trust List. Import a certificate from a trusted CA for signatures that validate automatically.</p>
         </div>
+      </details>
 
-      </div>
-      <div class="sheet-foot">
-        <button class="secondary" id="reset-defaults">Reset to defaults</button>
-        <button data-close="settings-modal">Done</button>
-      </div>
     </div>
-  </div>
+    <div class="slideover-foot">
+      <button class="secondary" id="reset-defaults">Reset to defaults</button>
+      <button data-closepanel="settings-panel">Done</button>
+    </div>
+  </aside>
 
   <!-- What the signature produced -->
   <div id="receipt-modal" class="modal-overlay">
     <div class="modal">
-      <h3>Signature applied</h3>
+      <div class="modal-head">
+        <button class="close-x" data-close="receipt-modal" aria-label="Close">✕</button>
+        <h3>Signature applied</h3>
+      </div>
       <div class="receipt">
         <dl>
           <dt>Document ID</dt><dd id="rc-id"></dd>
@@ -1131,8 +1502,12 @@
       ['#141311', 'Black'], ['#1f4fbf', 'Blue'], ['#b55245', 'Red'],
       ['#2e7d4f', 'Green'], ['#6b4bb8', 'Violet'], ['#c48a16', 'Amber']
     ];
+    const HL_COLORS = [
+      ['#ffe066', 'Yellow'], ['#9be38f', 'Green'], ['#8fd4ff', 'Blue'],
+      ['#ff9bd1', 'Pink'], ['#ffb27a', 'Orange']
+    ];
     const ACCENT_COLORS = [
-      ['#c6a36a', 'Brass'], ['#4a7dd1', 'Blue'], ['#4f9d69', 'Green'],
+      ['#c4a574', 'Brass'], ['#4a7dd1', 'Blue'], ['#4f9d69', 'Green'],
       ['#8d6fd1', 'Violet'], ['#b55245', 'Clay'], ['#7d8794', 'Slate']
     ];
 
@@ -1154,14 +1529,14 @@
     let viewport = null;        // current pdf.js viewport (CSS px)
     let renderTask = null, renderSeq = 0;
     let ink = {};               // page number -> [{color, w, pts:[[x,y] in PDF space]}]
-    let drawingMode = false, currentStroke = null, penColor = '#141311';
+    let drawingMode = false, currentStroke = null;
     let placement = null;       // {url, aspect, x, y, w, h} in CSS px of the page
     let signed = false;         // document has a digital signature -> edits locked
     let busy = false;
 
     const $ = id => document.getElementById(id);
     const fileInput = $('file-input'), multiInput = $('multi-input');
-    const dropzone = $('dropzone'), workspace = $('workspace'), bottomBar = $('bottom-bar');
+    const dropzone = $('dropzone'), workspace = $('workspace');
     const wrap = $('viewer-wrap'), stack = $('page-stack');
     const canvas = $('pdf-canvas'), ctx = canvas.getContext('2d');
     const drawCanvas = $('draw-canvas'), drawCtx = drawCanvas.getContext('2d');
@@ -1181,7 +1556,7 @@
     // name -> [storage key, default]. The default's type decides how it is parsed.
     const SETTING_DEFS = {
       theme:     ['observer-theme', 'system'],
-      accent:    ['observer-accent', '#c6a36a'],
+      accent:    ['observer-accent', '#c4a574'],
       fontSize:  ['observer-fontsize', 100],
       pageNums:  ['observer-pagenums', true],
       name:      ['observer-name', ''],
@@ -1192,7 +1567,14 @@
       timestamp: ['observer-timestamp', false],
       pen:       ['observer-pen', '#141311'],
       stroke:    ['observer-stroke', 1.6],
+      penOpacity:['observer-pen-opacity', 1],
+      hl:        ['observer-hl', '#ffe066'],
+      hlWidth:   ['observer-hl-width', 14],
+      hlOpacity: ['observer-hl-opacity', 0.35],
       eraser:    ['observer-eraser', 18],
+      showHash:  ['observer-showhash', true],
+      localOnly: ['observer-localonly', false],
+      recents:   ['observer-recents', true],
       ocrLang:   ['observer-ocr', 'eng'],
       autoOcr:   ['observer-autoocr', false],
       viewMode:  ['observer-view', 'single'],
@@ -1262,10 +1644,39 @@
       statusEl.classList.remove('show');
       statusEl._t = setTimeout(() => { statusEl.style.display = 'none'; }, 220);
     }
-    function closeModal(id) { $(id).classList.remove('show'); }
-    function openModal(id) { $(id).classList.add('show'); }
+    // Whenever anything is layered over the document, the page behind it stops
+    // scrolling. One helper keeps that in step with every kind of overlay.
+    const anyOverlay = () => !!document.querySelector('.modal-overlay.show, .slideover.open, .busy-overlay.open');
+    function syncScrollLock() { document.body.classList.toggle('locked-scroll', anyOverlay()); }
+
+    function closeModal(id) { $(id).classList.remove('show'); syncScrollLock(); }
+    function openModal(id) { $(id).classList.add('show'); syncScrollLock(); }
     document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal(b.dataset.close));
-    document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('show'); }));
+    document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); }));
+
+    function openPanel(id) {
+      document.querySelectorAll('.slideover.open').forEach(x => { if (x.id !== id) x.classList.remove('open'); });
+      $(id).classList.add('open');
+      $('panel-scrim').classList.add('open');
+      syncScrollLock();
+    }
+    function closePanel(id) {
+      $(id).classList.remove('open');
+      if (!document.querySelector('.slideover.open')) $('panel-scrim').classList.remove('open');
+      syncScrollLock();
+    }
+    function closeAllPanels() { document.querySelectorAll('.slideover.open').forEach(x => closePanel(x.id)); }
+    document.querySelectorAll('[data-closepanel]').forEach(b => b.onclick = () => closePanel(b.dataset.closepanel));
+    $('panel-scrim').onclick = closeAllPanels;
+
+    // Long jobs sit behind a clear overlay rather than a toast you might miss.
+    function showBusy(text, sub = '') {
+      $('busy-text').textContent = text;
+      $('busy-sub').textContent = sub;
+      $('busy').classList.add('open');
+      syncScrollLock();
+    }
+    function hideBusy() { $('busy').classList.remove('open'); syncScrollLock(); }
     const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 30)));
     const toU8 = b => b instanceof Uint8Array ? b : new Uint8Array(b);
 
@@ -1274,7 +1685,7 @@
       busy = true;
       try { return await fn(); }
       catch (e) { console.error(e); setStatus(`${label} error: ${e.message || e}`, 5000); }
-      finally { busy = false; }
+      finally { busy = false; hideBusy(); }
     }
 
     function hasSignature(u8) {
@@ -1283,7 +1694,8 @@
     }
     function updateLock() {
       $('lock-banner').classList.toggle('show', signed);
-      ['draw-btn', 'rotate-btn', 'delete-page-btn', 'combine-btn', 'apply-visual'].forEach(id => $(id).classList.toggle('locked', signed));
+      ['draw-btn', 'highlight-btn', 'apply-visual', 'op-insert', 'op-addfile', 'op-rotate', 'op-duplicate', 'op-delete']
+        .forEach(id => $(id).classList.toggle('locked', signed));
     }
     function lockedNotice() {
       const b = $('lock-banner');
@@ -1293,7 +1705,9 @@
     $('unlock-btn').onclick = () => { signed = false; updateLock(); setStatus('Unlocked. Saving edits will invalidate the existing signature.', 4000); };
 
     // ---------- Opening files ----------
-    $('settings-btn').onclick = () => { initSettingsUI(); renderIdStatus(); openModal('settings-modal'); };
+    const openSettings = () => { initSettingsUI(); renderIdStatus(); openPanel('settings-panel'); };
+    $('settings-btn').onclick = openSettings;
+    $('settings-btn-doc').onclick = openSettings;
     const isPdf = f => f && (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name));
     const PDF_TYPES = [{ description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } }];
 
@@ -1312,16 +1726,15 @@
       let start = 0;
       if (!pdfDoc) { await loadDocument(list[0].f, list[0].src); start = 1; }
       for (const { f } of list.slice(start)) extraPdfs.push({ name: f.name, bytes: toU8(await f.arrayBuffer()) });
-      if (list.length > start) setStatus(`Added ${list.length - start} file(s) for Combine (Pages menu)`, 3500);
+      if (list.length > start) await combineNow();
     }
 
-    dropzone.onclick = () => openFromFiles('open');
-    dropzone.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFromFiles('open'); } };
-    dropzone.ondragover = e => { e.preventDefault(); dropzone.style.background = 'rgba(198,163,106,0.15)'; };
+    dropzone.ondragover = e => { e.preventDefault(); dropzone.style.background = 'var(--accent-tint)'; };
     dropzone.ondragleave = () => dropzone.style.background = '';
     dropzone.ondrop = e => { e.preventDefault(); dropzone.style.background = ''; if (e.dataTransfer.files[0]) openFile(e.dataTransfer.files[0]); };
-    $('start-files').onclick = () => openFromFiles('open');
-    $('start-gdrive').onclick = () => openFromDrive('open');
+    $('home-open').onclick = () => openFromFiles('open');
+    $('home-icloud').onclick = () => openFromFiles('open');
+    $('home-gdrive').onclick = () => openFromDrive('open');
 
     let openMode = 'open';
     function showOpenSheet(mode) {
@@ -1330,8 +1743,6 @@
       openModal('open-modal');
       if (driveConfigured) gPreload().catch(() => {});
     }
-    $('open-btn').onclick = () => showOpenSheet('open');
-    $('add-btn').onclick = () => showOpenSheet('add');
     $('open-files').onclick = () => { closeModal('open-modal'); openFromFiles(openMode); };
     $('open-gdrive').onclick = () => { closeModal('open-modal'); openFromDrive(openMode); };
 
@@ -1350,9 +1761,14 @@
       }
     }
 
-    async function openFile(file, src = { type: 'local' }) {
+    // openFile takes the busy lock; openFileNow is for callers that already hold
+    // it (run() ignores a nested call, which would silently drop the document).
+    async function openFileNow(file, src = { type: 'local' }) {
       if (!isPdf(file)) { setStatus('That file is not a PDF'); return; }
-      await run('Load', () => loadDocument(file, src));
+      await loadDocument(file, src);
+    }
+    async function openFile(file, src = { type: 'local' }) {
+      await run('Load', () => openFileNow(file, src));
     }
     async function loadDocument(file, src) {
       {
@@ -1366,6 +1782,10 @@
         source = src || { type: 'local' };
         extraPdfs = [];
         ink = {};
+        resetHistory();
+        pageSel = new Set();
+        flatCache = null;
+        exportFormat = 'keep';
         currentPage = 1;
         zoom = cfg.zoom;
         signed = hasSignature(pdfBytes);
@@ -1377,11 +1797,12 @@
         ocrOut.style.display = 'none';
         $('start').style.display = 'none';
         workspace.style.display = 'flex';
-        bottomBar.classList.add('show');
         document.body.classList.add('has-doc');
         updateHeaderVar();
         window.scrollTo(0, 0);
         await reloadView();
+        markClean();
+        recentSave(originalName, pdfBytes, totalPages);
         setStatus(`Loaded ${originalName}${signed ? ' (digitally signed)' : ''}`);
         // Auto-OCR runs after this task releases the busy lock.
         if (cfg.autoOcr) setTimeout(() => { if (!busy) $('ocr-btn').click(); }, 300);
@@ -1403,7 +1824,7 @@
     let pageSizes = [];           // [{w, h}] at scale 1 (rotation applied)
     const flowEl = $('flow'), reflowEl = $('reflow');
     const isFlow = () => viewMode === 'continuous' || viewMode === 'two';
-    const headerH = () => $('app-header').offsetHeight + (document.body.classList.contains('searching') ? 54 : 0);
+    const headerH = () => $('app-header').offsetHeight;
     function updateHeaderVar() { document.documentElement.style.setProperty('--header-h', $('app-header').offsetHeight + 'px'); }
     const pct = scale => Math.round(scale * 100 / (96 / 72)) + '%';
     const clampPage = n => Math.min(Math.max(1, Math.round(n) || 1), totalPages || 1);
@@ -2031,9 +2452,24 @@
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.key.toLowerCase() === 'f') { e.preventDefault(); openSearch(); return; }
       if (mod && e.key.toLowerCase() === 'p') { e.preventDefault(); $('print-btn').click(); return; }
+      if (mod && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        e.shiftKey ? redoInk() : undoInk();
+        return;
+      }
       if (e.target.matches('input, select, textarea')) return;
       if (e.key === 'ArrowLeft') $('prev').click();
       if (e.key === 'ArrowRight') $('next').click();
+    });
+    // Escape backs out of whatever is on top.
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const modal = [...document.querySelectorAll('.modal-overlay.show')].pop();
+      if (modal) { closeModal(modal.id); return; }
+      const panel = document.querySelector('.slideover.open');
+      if (panel) { closePanel(panel.id); return; }
+      if ($('search-bar').classList.contains('show')) { closeSearch(); return; }
+      if (isAnnotating()) setTool('select');
     });
     const setZoom = z => { zoom = Math.min(4, Math.max(0.5, z)); renderView(); };
     $('zoom-in').onclick = () => setZoom(zoom * 1.25);
@@ -2087,34 +2523,122 @@
       root.textContent = '';
     });
 
-    // ---------- Drawing (ink) ----------
-    function setDrawing(on) {
-      drawingMode = on;
-      drawCanvas.classList.toggle('active', on);
-      $('draw-btn').classList.toggle('active', on);
-      $('draw-btn').textContent = on ? 'Drawing' : 'Draw';
-      $('draw-bar').classList.toggle('show', on);
-      if (on) buildPenSwatches(); else setErasing(false);
-      if (!on) leaveEditing();
-    }
+    // ---------- Tools ----------
+    // Exactly one tool is active: select (the default), draw or highlight.
+    // Sign and OCR are actions rather than modes, so they leave the tool alone.
+    let tool = 'select';
+    const TOOL_BTNS = { select: 'select-btn', draw: 'draw-btn', highlight: 'highlight-btn' };
+    const isAnnotating = () => tool === 'draw' || tool === 'highlight';
+    const activeColor = () => tool === 'highlight' ? cfg.hl : cfg.pen;
+    const activeWidth = () => tool === 'highlight' ? cfg.hlWidth : cfg.stroke;
+    const activeOpacity = () => tool === 'highlight' ? cfg.hlOpacity : cfg.penOpacity;
 
-    // ---- Pen and eraser ----
-    // The swatches come from PEN_COLORS so whatever Settings picks as the
-    // default pen colour is always one of the choices here.
+    async function setTool(next) {
+      if (next === tool) return;
+      if ((next === 'draw' || next === 'highlight') && signed) { lockedNotice(); return; }
+      if (next !== 'select') { endPlacement(); await enterSingleForEditing(); }
+      tool = next;
+      drawingMode = isAnnotating();
+      drawCanvas.classList.toggle('active', drawingMode);
+      for (const [t, id] of Object.entries(TOOL_BTNS)) $(id).classList.toggle('active', t === tool);
+      $('inspector').classList.toggle('open', drawingMode);
+      if (drawingMode) { buildPenSwatches(); syncInspector(); }
+      else { setErasing(false); leaveEditing(); }
+    }
+    // Kept for the many call sites that just want to leave annotation mode.
+    const setDrawing = on => { setTool(on ? 'draw' : 'select'); };
+    $('select-btn').onclick = () => setTool('select');
+    $('highlight-btn').onclick = () => setTool(tool === 'highlight' ? 'select' : 'highlight');
+    $('done-ink').onclick = () => setTool('select');
+
+    // ---- Inspector ----
+    // Width is edited in tenths of a point so the range step stays integral.
+    function syncInspector() {
+      const hl = tool === 'highlight';
+      const w = $('insp-width'), o = $('insp-opacity');
+      $('insp-title').textContent = hl ? 'Highlight' : 'Draw';
+      w.min = hl ? 60 : 6;
+      w.max = hl ? 320 : 60;
+      w.step = hl ? 20 : 2;
+      w.value = Math.round(activeWidth() * 10);
+      $('insp-width-val').textContent = activeWidth().toFixed(1);
+      o.value = Math.round(activeOpacity() * 100);
+      $('insp-opacity-val').textContent = Math.round(activeOpacity() * 100) + '%';
+      updateUndoButtons();
+    }
+    $('insp-width').oninput = e => {
+      setCfg(tool === 'highlight' ? 'hlWidth' : 'stroke', +e.target.value / 10);
+      $('insp-width-val').textContent = activeWidth().toFixed(1);
+      if (typeof initSettingsUI === 'function') syncSettingsRanges();
+    };
+    $('insp-opacity').oninput = e => {
+      setCfg(tool === 'highlight' ? 'hlOpacity' : 'penOpacity', +e.target.value / 100);
+      $('insp-opacity-val').textContent = Math.round(activeOpacity() * 100) + '%';
+    };
+
+    // ---- Swatches ----
+    // Built from whichever palette the active tool uses, so the colour shown
+    // in the inspector is always the one the next stroke will use.
     function buildPenSwatches() {
       const host = $('pen-swatches');
+      const hl = tool === 'highlight';
+      const palette = hl ? HL_COLORS : PEN_COLORS;
+      const current = activeColor();
       host.textContent = '';
-      for (const [hex, label] of PEN_COLORS) {
+      for (const [hex, label] of palette) {
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'swatch' + (hex === penColor ? ' selected' : '');
+        b.className = 'sw-dot' + (hex === current ? ' on' : '');
         b.style.background = hex;
         b.dataset.color = hex;
-        b.setAttribute('aria-label', label + ' pen');
-        b.onclick = () => { setCfg('pen', hex); penColor = hex; setErasing(false); buildPenSwatches(); };
+        b.setAttribute('aria-label', label);
+        b.onclick = () => {
+          setCfg(hl ? 'hl' : 'pen', hex);
+          setErasing(false);
+          buildPenSwatches();
+          if (typeof initSettingsUI === 'function') syncSettingsSwatches();
+        };
         host.appendChild(b);
       }
     }
+
+    // ---- Undo / redo ----
+    // Snapshots of the pending-annotation map. Strokes already written into the
+    // PDF are part of the file, so they are outside this history.
+    let undoStack = [], redoStack = [];
+    const snapshotInk = () => JSON.parse(JSON.stringify(ink));
+    function updateUndoButtons() {
+      $('undo-ink').disabled = !undoStack.length;
+      $('redo-ink').disabled = !redoStack.length;
+    }
+    function pushUndo() {
+      undoStack.push(snapshotInk());
+      if (undoStack.length > 30) undoStack.shift();
+      redoStack.length = 0;
+      updateUndoButtons();
+    }
+    function resetHistory() { undoStack = []; redoStack = []; updateUndoButtons(); }
+    function undoInk() {
+      if (!undoStack.length) return;
+      redoStack.push(snapshotInk());
+      ink = undoStack.pop();
+      redrawInk(); updateUndoButtons(); updateDocName();
+    }
+    function redoInk() {
+      if (!redoStack.length) return;
+      undoStack.push(snapshotInk());
+      ink = redoStack.pop();
+      redrawInk(); updateUndoButtons(); updateDocName();
+    }
+    $('undo-ink').onclick = undoInk;
+    $('redo-ink').onclick = redoInk;
+    $('clear-ink').onclick = () => {
+      if (!(ink[currentPage] || []).length) { setStatus('Nothing to clear on this page'); return; }
+      pushUndo();
+      delete ink[currentPage];
+      redrawInk();
+      setStatus('Cleared this page\'s annotations');
+    };
     let erasing = false, eraserDown = false;
     function setErasing(on) {
       erasing = on;
@@ -2130,6 +2654,7 @@
     function eraseAt(x, y) {
       const list = ink[currentPage];
       if (!list || !list.length || !viewport) return;
+      if (!viewport) return;
       const r = cfg.eraser / 2;
       const keep = list.filter(st => !st.pts.some(pt => {
         const [vx, vy] = viewport.convertToViewportPoint(pt[0], pt[1]);
@@ -2139,21 +2664,14 @@
       ink[currentPage] = keep;
       redrawInk();
     }
-    $('draw-btn').onclick = async () => {
-      if (drawingMode) { setDrawing(false); return; }
-      if (signed) { lockedNotice(); return; }
-      endPlacement();
-      await enterSingleForEditing();
-      setDrawing(true);
-    };
-    $('done-ink').onclick = () => setDrawing(false);
-    $('undo-ink').onclick = () => { const s = ink[currentPage]; if (s && s.length) { s.pop(); redrawInk(); } };
+    $('draw-btn').onclick = () => setTool(tool === 'draw' ? 'select' : 'draw');
 
     const hasInk = () => Object.values(ink).some(a => a.length);
     const cssPos = (e, el) => { const r = el.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
 
     function strokeStyle(s) {
       drawCtx.strokeStyle = s.color;
+      drawCtx.globalAlpha = s.o == null ? 1 : s.o;
       drawCtx.lineWidth = s.w * viewport.scale;
       drawCtx.lineCap = 'round';
       drawCtx.lineJoin = 'round';
@@ -2173,14 +2691,20 @@
         if (s.pts.length === 1) { const [vx, vy] = viewport.convertToViewportPoint(...s.pts[0]); drawCtx.lineTo(vx + 0.01, vy); }
         drawCtx.stroke();
       }
+      drawCtx.globalAlpha = 1;
     }
     drawCanvas.addEventListener('pointerdown', e => {
       if (!drawingMode) return;
       e.preventDefault();
       drawCanvas.setPointerCapture(e.pointerId);
       const [x, y] = cssPos(e, drawCanvas);
+      pushUndo();
       if (erasing) { eraserDown = true; eraseAt(x, y); return; }
-      currentStroke = { color: penColor, w: cfg.stroke, pts: [viewport.convertToPdfPoint(x, y)], last: [x, y] };
+      currentStroke = {
+        kind: tool === 'highlight' ? 'hl' : 'pen',
+        color: activeColor(), w: activeWidth(), o: activeOpacity(),
+        pts: [viewport.convertToPdfPoint(x, y)], last: [x, y]
+      };
       (ink[currentPage] = ink[currentPage] || []).push(currentStroke);
       redrawInk();
     });
@@ -2190,14 +2714,21 @@
       e.preventDefault();
       const [x, y] = cssPos(e, drawCanvas);
       currentStroke.pts.push(viewport.convertToPdfPoint(x, y));
-      strokeStyle(currentStroke);
-      drawCtx.beginPath();
-      drawCtx.moveTo(...currentStroke.last);
-      drawCtx.lineTo(x, y);
-      drawCtx.stroke();
+      if ((currentStroke.o == null ? 1 : currentStroke.o) < 1) {
+        // Translucent strokes have to be repainted whole: drawing segment by
+        // segment would stack alpha at every join and darken the overlaps.
+        redrawInk();
+      } else {
+        strokeStyle(currentStroke);
+        drawCtx.beginPath();
+        drawCtx.moveTo(...currentStroke.last);
+        drawCtx.lineTo(x, y);
+        drawCtx.stroke();
+        drawCtx.globalAlpha = 1;
+      }
       currentStroke.last = [x, y];
     });
-    const endStroke = () => { eraserDown = false; if (currentStroke) { delete currentStroke.last; currentStroke = null; } };
+    const endStroke = () => { eraserDown = false; if (currentStroke) { delete currentStroke.last; currentStroke = null; updateDocName(); } };
     drawCanvas.addEventListener('pointerup', endStroke);
     drawCanvas.addEventListener('pointercancel', endStroke);
 
@@ -2211,12 +2742,13 @@
         const page = doc.getPage(+p - 1);
         for (const s of strokes) {
           const color = hexToRgb(s.color);
+          const opacity = s.o == null ? 1 : s.o;
           const pts = s.pts.length === 1 ? [s.pts[0], [s.pts[0][0] + 0.01, s.pts[0][1]]] : s.pts;
           for (let i = 1; i < pts.length; i++) {
             page.drawLine({
               start: { x: pts[i - 1][0], y: pts[i - 1][1] },
               end: { x: pts[i][0], y: pts[i][1] },
-              thickness: s.w, color, lineCap: LineCapStyle.Round
+              thickness: s.w, color, opacity, lineCap: LineCapStyle.Round
             });
           }
         }
@@ -2230,9 +2762,11 @@
       const pending = ink;
       applyInk(doc, pending);
       if (fn) await fn(doc);
-      pdfBytes = await doc.save();
-      if (ink === pending) ink = {};
+      pdfBytes = toU8(await doc.save());
+      if (ink === pending) { ink = {}; resetHistory(); }
+      flatCache = null;
       await reloadView();
+      markDirty();
       return true;
     }
 
@@ -2252,10 +2786,25 @@
       $('audit-sub').textContent = already
         ? 'Unavailable: this PDF is already signed, so no page can be added without breaking that signature'
         : 'A summary page added before signing, so the signature covers it';
-      $('add-timestamp').checked = cfg.timestamp;
+      $('add-timestamp').checked = cfg.timestamp && !cfg.localOnly;
+      $('hash-preview').style.display = cfg.showHash ? '' : 'none';
       openModal('sig-modal');
       sizeSigPad();
+      if (cfg.showHash) previewHash();
     };
+    // The hash of the bytes as they stand. Signing adds the audit page first,
+    // so this is the hash the certificate page and the receipt will report.
+    async function previewHash() {
+      const el = $('hp-value');
+      el.textContent = 'calculating…';
+      const at = pdfBytes;
+      try {
+        const h = await sha256Hex(at.slice(0));
+        if (pdfBytes === at) el.textContent = h;
+      } catch {
+        el.textContent = 'unavailable (hashing needs a secure https connection)';
+      }
+    }
     $('sig-more').onclick = () => {
       const open = $('sig-extra').style.display === 'none';
       $('sig-extra').style.display = open ? '' : 'none';
@@ -2428,7 +2977,7 @@
       if (imp) return { p12: b64ToU8(imp), pwd: store.get('observer-p12-imported-pwd', ''), cn: store.get('observer-p12-imported-cn', name) };
       const ids = getIds();
       if (!ids[name]) {
-        setStatus('Creating your Digital ID (one time)…', 0);
+        showBusy('Creating your Digital ID…', 'One time only, then it is reused');
         await nextFrame();
         ids[name] = createIdentity(name);
         store.set('observer-ids', JSON.stringify(ids));
@@ -2659,7 +3208,7 @@
       if (hasInk()) await editPdf(null);   // write pending drawings before sealing
       endPlacement();
 
-      setStatus('Preparing signature…', 0);
+      showBusy('Preparing signature…', 'Everything happens on this device');
       await nextFrame();
       // Hash what is about to be signed. crypto.subtle is unavailable on
       // insecure origins, so treat the hash as optional rather than fatal.
@@ -2676,12 +3225,12 @@
 
       let tsa = null;
       if (wantTimestamp) {
-        setStatus('Requesting trusted timestamp…', 0);
+        showBusy('Requesting trusted timestamp…', 'Sending a hash, never the document');
         tsa = await requestTimestamp(pdfBytes);
       }
 
       if (wantAudit) {
-        setStatus('Adding audit certificate page…', 0);
+        showBusy('Adding audit certificate page…');
         await nextFrame();
         pdfBytes = await buildAuditPage({
           docId, name, reason, location, contact, contentHash, signedAt, tsa, wantTimestamp,
@@ -2693,8 +3242,9 @@
         });
       }
 
+      showBusy('Preparing your Digital ID…', 'Generating a key the first time takes a moment');
       const id = await getSigningId(name);
-      setStatus('Signing…', 0);
+      showBusy('Signing…', 'Sealing the document with PKCS#7');
       await nextFrame();
       // zgapdfsigner's option names: signame -> /Name, contact -> /ContactInfo,
       // signdate -> /M. Passing `name` or `contactInfo` is silently ignored.
@@ -2707,9 +3257,12 @@
       const out = await signer.sign(pdfBytes.slice().buffer);
       pdfBytes = toU8(out);
       signed = true;
+      flatCache = null;
       updateLock();
       await reloadView();
+      markDirty();
       if (wantAudit) await goToPage(totalPages);
+      hideBusy();
       closeModal('sig-modal');
       setStatus(`Digitally signed as ${id.cn}`);
       showReceipt({ docId, signer: id.cn, signedAt, contentHash, auditAdded: wantAudit, tsa, wantTimestamp, selfSigned: !imported });
@@ -2724,64 +3277,51 @@
       });
     }
     $('ocr-btn').onclick = () => run('OCR', async () => {
-      setStatus('Running OCR…', 0);
+      if (!pdfDoc) return;
+      showBusy('Reading page ' + currentPage + '…', 'Text recognition runs on this device');
       ocrOut.style.display = 'block';
       ocrOut.textContent = 'Processing…';
       try {
         if (!window.Tesseract) await loadScript('vendor/tesseract.min.js');
         const src = await pageCanvas(currentPage, 2);
         const { data: { text } } = await Tesseract.recognize(src, cfg.ocrLang, {
-          logger: m => { if (m.status === 'recognizing text') setStatus(`OCR ${Math.round(m.progress * 100)}%`, 0); }
+          logger: m => { if (m.status === 'recognizing text') $('busy-sub').textContent = `${Math.round(m.progress * 100)}% of page ${currentPage}`; }
         });
         ocrOut.textContent = text || '(no text found)';
         setStatus('OCR complete');
       } catch (e) {
         ocrOut.textContent = 'OCR failed: ' + (e.message || e) + (navigator.onLine ? '' : '\nOCR needs an internet connection the first time.');
         setStatus('OCR error');
-      }
+      } finally { hideBusy(); }
     });
 
-    // ---------- Page tools ----------
-    $('tools-btn').onclick = () => {
-      setDrawing(false);
-      $('file-list').innerHTML = '';
-      const names = [originalName + ' (current)', ...extraPdfs.map(f => f.name)];
-      names.forEach((n, i) => { const d = document.createElement('div'); d.textContent = `${i + 1}. ${n}`; $('file-list').appendChild(d); });
-      openModal('tools-modal');
-    };
-    $('rotate-btn').onclick = () => run('Rotate', async () => {
-      const idx = currentPage - 1;
-      if (await editPdf(doc => { const p = doc.getPage(idx); p.setRotation(degrees((p.getRotation().angle + 90) % 360)); })) {
-        setStatus('Page rotated'); closeModal('tools-modal');
-      }
-    });
-    $('delete-page-btn').onclick = () => run('Delete', async () => {
-      if (totalPages <= 1) { setStatus('Cannot delete the last page'); return; }
-      const idx = currentPage - 1;
-      if (await editPdf(doc => doc.removePage(idx))) { setStatus('Page deleted'); closeModal('tools-modal'); }
-    });
-    $('combine-btn').onclick = () => run('Combine', async () => {
-      if (!extraPdfs.length) { setStatus('Use Add to load more PDFs first'); return; }
-      if (signed) { closeModal('tools-modal'); lockedNotice(); return; }
-      setStatus('Combining…', 0);
-      const cur = await PDFDocument.load(pdfBytes);
-      applyInk(cur, ink);
-      const merged = await PDFDocument.create();
-      for (const src of [cur, ...await Promise.all(extraPdfs.map(f => PDFDocument.load(f.bytes)))]) {
-        const pages = await merged.copyPages(src, src.getPageIndices());
-        pages.forEach(p => merged.addPage(p));
-      }
-      const count = extraPdfs.length + 1;
-      pdfBytes = await merged.save();
-      ink = {};
-      extraPdfs = [];
-      originalName = 'combined.pdf';
-      source = { type: 'local' };
-      currentPage = 1;
-      await reloadView();
-      setStatus(`Combined ${count} files`);
-      closeModal('tools-modal');
-    });
+    // ---------- Combine ----------
+    // "Add file" in the Pages panel appends straight away rather than leaving
+    // the extra files parked for a separate Combine step.
+    async function combineNow() {
+      if (!extraPdfs.length) return;
+      if (signed) { lockedNotice(); return; }
+      const count = extraPdfs.length;
+      showBusy('Combining…', `${count} file${count === 1 ? '' : 's'}`);
+      try {
+        const cur = await PDFDocument.load(pdfBytes);
+        applyInk(cur, ink);
+        const merged = await PDFDocument.create();
+        for (const src of [cur, ...await Promise.all(extraPdfs.map(f => PDFDocument.load(f.bytes)))]) {
+          const pages = await merged.copyPages(src, src.getPageIndices());
+          pages.forEach(pg => merged.addPage(pg));
+        }
+        pdfBytes = toU8(await merged.save());
+        ink = {};
+        resetHistory();
+        extraPdfs = [];
+        flatCache = null;
+        await reloadView();
+        markDirty();
+        if ($('pages-panel').classList.contains('open')) buildPageRows();
+        setStatus(`Added ${count} file${count === 1 ? '' : 's'}`);
+      } finally { hideBusy(); }
+    }
 
     // ---------- Save ----------
     function download(bytes, name, type = 'application/pdf') {
@@ -2799,7 +3339,7 @@
       let n = ($('save-name').value.trim() || originalName).replace(/[\\/:*?"<>|]+/g, '-');
       return /\.pdf$/i.test(n) ? n : n + '.pdf';
     };
-    const savedOk = msg => { closeModal('save-modal'); setStatus(msg, 3500); };
+    const savedOk = msg => { closeModal('save-modal'); markClean(); setStatus(msg, 3500); };
     // iPhone/iPad/Android: the share sheet's "Save to Files" reaches iCloud Drive and other cloud apps
     const shareTarget = file => !window.showSaveFilePicker && navigator.maxTouchPoints > 0 &&
       !!navigator.canShare && navigator.canShare({ files: [file] });
@@ -2813,13 +3353,14 @@
       await w.close();
     }
 
-    // Save opens a sheet. Pending drawings are written first, so the bytes are final and each
-    // save button can hand them to the share sheet / Google sign-in straight from the tap.
-    $('save-btn').onclick = () => run('Save', async () => {
+    // Share opens the export sheet. Pending drawings are written first, so the bytes are final
+    // and each destination can hand them to the share sheet / Google sign-in straight from the tap.
+    async function openExportSheet() {
       if (!pdfBytes) return;
       if (placement) { setStatus('Apply or cancel the signature placement first'); return; }
       setDrawing(false);
       if (hasInk()) await editPdf(null);
+      paintExportFormat();
       $('save-name').value = originalName;
       const orig = $('save-original'), origLabel = $('save-original-label');
       orig.style.display = source.type === 'local' ? 'none' : 'flex';
@@ -2835,13 +3376,35 @@
       $('save-files-hint').textContent = window.showSaveFilePicker ? 'Choose any folder, including iCloud Drive'
         : shareTarget(probe) ? 'Opens the share sheet: tap Save to Files, then iCloud Drive'
         : 'Downloads the file (set your browser to save downloads to iCloud Drive)';
+      const local = !!cfg.localOnly;
+      if (local) { $('save-gdrive-api').style.display = 'none'; $('save-gdrive-sys').style.display = 'none'; }
       openModal('save-modal');
-      if (driveConfigured) gPreload().catch(() => {});
+      if (driveConfigured && !local) gPreload().catch(() => {});
+    }
+    $('share-btn').onclick = () => run('Share', openExportSheet);
+
+    // Save writes straight back to wherever the document came from; with no such
+    // place to write, it falls back to the export sheet.
+    $('save-btn').onclick = () => run('Save', async () => {
+      if (!pdfBytes) return;
+      if (placement) { setStatus('Apply or cancel the signature placement first'); return; }
+      setDrawing(false);
+      if (hasInk()) await editPdf(null);
+      if (source.type === 'handle') {
+        await writeHandle(source.handle, await exportBytes());
+        savedOk(`Saved ${source.handle.name}`);
+      } else if (source.type === 'drive') {
+        await driveUpdate(source.id, await exportBytes());
+        savedOk(`Updated ${source.name} in Google Drive`);
+      } else {
+        await openExportSheet();
+      }
     });
 
     const saveToSystem = async () => {
       const name = outName();
-      const file = new File([pdfBytes], name, { type: 'application/pdf' });
+      const bytes = await exportBytes();
+      const file = new File([bytes], name, { type: 'application/pdf' });
       try {
         if (window.showSaveFilePicker) {
           const handle = await window.showSaveFilePicker({ suggestedName: name, types: PDF_TYPES });
@@ -2864,7 +3427,7 @@
     };
     $('save-files').onclick = saveToSystem;
     $('save-gdrive-sys').onclick = saveToSystem;
-    $('save-download').onclick = () => { const name = outName(); download(pdfBytes, name); savedOk(`Downloaded ${name}`); };
+    $('save-download').onclick = () => run('Download', async () => { const name = outName(); download(await exportBytes(), name); savedOk(`Downloaded ${name}`); });
 
     $('save-original').onclick = () => {
       if (source.type === 'drive') {
@@ -3164,7 +3727,11 @@
       closeModal('google-modal');
       setStatus('Signed out of Google');
     };
-    $('settings-google').onclick = () => { closeModal('settings-modal'); showGoogleSheet('account'); };
+    $('settings-google').onclick = () => {
+      closePanel('settings-panel');
+      if (driveConfigured) showGoogleSheet('account');
+      else showDriveHelp('open');
+    };
     renderAccount();
     // ---- Google Drive through the device (works like iCloud Drive; no Google sign-in needed) ----
     // iPhone/iPad: the Google Drive app appears in the Files picker and the share sheet.
@@ -3220,10 +3787,539 @@
       closeModal('gdrive-help-modal');
       openFromFiles(ghMode);   // straight from the tap, so the system picker is allowed to open
     };
+    // Without an OAuth client ID Drive still works, but through the device's own
+    // Drive app rather than Observer's sign-in. Say so instead of hiding it.
     if (!driveConfigured) {
-      $('open-gdrive-hint').textContent = PLATFORM === 'ios' || PLATFORM === 'android'
+      const viaDevice = PLATFORM === 'ios' || PLATFORM === 'android'
         ? 'Through the Google Drive app, no sign-in needed' : 'Through Google Drive for desktop, no sign-in needed';
-      $('settings-google-wrap').style.display = 'none';
+      $('open-gdrive-hint').textContent = viaDevice;
+      $('home-gdrive-hint').textContent = viaDevice;
+      $('settings-google').textContent = 'How it works';
+    }
+
+    // ---------- Document lifecycle ----------
+    // "Dirty" means there is something that saving would capture: pending
+    // annotations, or edits already written into pdfBytes since the last save.
+    let pristineBytes = null;
+    let docDirty = false;
+    const isDirty = () => docDirty || hasInk();
+    function updateDocName() {
+      $('doc-name').textContent = originalName || 'Document';
+      $('doc-name').classList.toggle('is-dirty', isDirty());
+      $('reset-btn').disabled = !isDirty();
+    }
+    function markDirty() { docDirty = true; updateDocName(); }
+    function markClean() {
+      docDirty = false;
+      pristineBytes = pdfBytes ? pdfBytes.slice() : null;
+      updateDocName();
+    }
+
+    function closeDocument() {
+      if (renderTask) { renderTask.cancel(); renderTask = null; }
+      if (pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
+      pdfBytes = null; pristineBytes = null; docDirty = false;
+      ink = {}; resetHistory(); extraPdfs = [];
+      totalPages = 0; currentPage = 1; signed = false;
+      flatCache = null;
+      setTool('select');
+      endPlacement();
+      closeAllPanels();
+      if (search.q || $('search-bar').classList.contains('show')) closeSearch();
+      ocrOut.style.display = 'none';
+      ocrOut.textContent = '';
+      document.body.classList.remove('has-doc');
+      workspace.style.display = 'none';
+      $('start').style.display = 'block';
+      updateLock();
+      updateHeaderVar();
+      renderRecents();
+      window.scrollTo(0, 0);
+    }
+    $('doc-close').onclick = () => {
+      if (isDirty() && !confirm('Close this document?\n\nUnsaved changes will be lost.')) return;
+      closeDocument();
+    };
+    $('reset-btn').onclick = () => run('Reset', async () => {
+      if (!pdfBytes || !pristineBytes) return;
+      if (!isDirty()) { setStatus('No unsaved changes'); return; }
+      if (!confirm('Discard unsaved changes and go back to the last saved version?')) return;
+      pdfBytes = pristineBytes.slice();
+      ink = {}; resetHistory(); flatCache = null;
+      endPlacement();
+      setTool('select');
+      signed = hasSignature(pdfBytes);
+      updateLock();
+      await reloadView();
+      markClean();
+      setStatus('Reverted to the last saved version');
+    });
+
+    // ---------- Recent documents ----------
+    // Kept in IndexedDB on this device, contents included, because that is the
+    // only way Recent can actually reopen a file on iPhone, where a file handle
+    // cannot be stored. Settings → Privacy turns it off and clears it.
+    const RECENT_DB = 'observer-recents', RECENT_STORE = 'docs';
+    const RECENT_MAX = 12, RECENT_MAX_BYTES = 80 * 1024 * 1024;
+    let recentWarned = false;
+
+    function recentDb() {
+      return new Promise((res, rej) => {
+        if (!window.indexedDB) return rej(new Error('no indexedDB'));
+        const r = indexedDB.open(RECENT_DB, 1);
+        r.onupgradeneeded = () => {
+          if (!r.result.objectStoreNames.contains(RECENT_STORE)) r.result.createObjectStore(RECENT_STORE, { keyPath: 'id' });
+        };
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error || new Error('indexedDB open failed'));
+      });
+    }
+    function recentOp(mode, run) {
+      return recentDb().then(db => new Promise((res, rej) => {
+        const req = run(db.transaction(RECENT_STORE, mode).objectStore(RECENT_STORE));
+        if (!req) return res(null);
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+      })).catch(e => {
+        if (!recentWarned) { recentWarned = true; console.warn('Recent documents unavailable:', e); }
+        return null;
+      });
+    }
+    const recentAll = () => recentOp('readonly', st => st.getAll()).then(r => (r || []).sort((a, b) => b.opened - a.opened));
+    const recentGet = id => recentOp('readonly', st => st.get(id));
+    const recentDel = id => recentOp('readwrite', st => st.delete(id));
+    const recentWipe = () => recentOp('readwrite', st => st.clear());
+
+    async function recentSave(name, bytes, pages) {
+      if (!cfg.recents) return;
+      const id = `${name}:${bytes.length}`;
+      await recentOp('readwrite', st => st.put({ id, name, bytes: bytes.slice(), size: bytes.length, pages, opened: Date.now() }));
+      // Trim by count and by total size, oldest first.
+      const all = await recentAll();
+      let total = 0;
+      for (let i = 0; i < all.length; i++) {
+        total += all[i].size || 0;
+        if (i >= RECENT_MAX || total > RECENT_MAX_BYTES) await recentDel(all[i].id);
+      }
+      renderRecents();
+    }
+
+    const prettySize = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+    function prettyWhen(t) {
+      const mins = Math.round((Date.now() - t) / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return mins + ' min ago';
+      const hrs = Math.round(mins / 60);
+      if (hrs < 24) return hrs + (hrs === 1 ? ' hour ago' : ' hours ago');
+      const days = Math.round(hrs / 24);
+      return days < 8 ? days + (days === 1 ? ' day ago' : ' days ago') : new Date(t).toLocaleDateString();
+    }
+
+    async function renderRecents() {
+      const list = $('recent-list');
+      if (!list) return;
+      if (!cfg.recents) {
+        list.innerHTML = '';
+        const p = document.createElement('p');
+        p.className = 'recent-empty';
+        p.textContent = 'Recent documents are turned off in Settings → Privacy & data.';
+        list.appendChild(p);
+        $('recent-clear').style.display = 'none';
+        return;
+      }
+      const all = await recentAll();
+      list.textContent = '';
+      $('recent-clear').style.display = all.length ? '' : 'none';
+      if (!all.length) {
+        const p = document.createElement('p');
+        p.className = 'recent-empty';
+        p.textContent = 'Nothing yet. Documents you open are listed here so you can pick up where you left off.';
+        list.appendChild(p);
+        return;
+      }
+      for (const rec of all) {
+        const row = document.createElement('button');
+        row.className = 'recent-item';
+        row.type = 'button';
+        const main = document.createElement('span');
+        main.className = 'ri-main';
+        const nm = document.createElement('span');
+        nm.className = 'ri-name';
+        nm.textContent = rec.name;
+        const meta = document.createElement('span');
+        meta.className = 'ri-meta';
+        meta.textContent = `${rec.pages || '?'} page${rec.pages === 1 ? '' : 's'} · ${prettySize(rec.size || 0)} · ${prettyWhen(rec.opened)}`;
+        main.append(nm, meta);
+        const drop = document.createElement('span');
+        drop.className = 'ri-drop';
+        drop.textContent = '✕';
+        drop.title = 'Remove from Recent';
+        drop.setAttribute('role', 'button');
+        drop.onclick = async e => { e.stopPropagation(); await recentDel(rec.id); renderRecents(); };
+        row.append(main, drop);
+        row.onclick = () => run('Open', async () => {
+          const full = await recentGet(rec.id);
+          if (!full || !full.bytes) { setStatus('That file is no longer stored on this device'); await recentDel(rec.id); renderRecents(); return; }
+          await openFileNow(new File([full.bytes], full.name, { type: 'application/pdf' }));
+        });
+        list.appendChild(row);
+      }
+    }
+    $('recent-clear').onclick = async () => {
+      if (!confirm('Clear the list of recent documents from this device?')) return;
+      await recentWipe();
+      renderRecents();
+      setStatus('Recent documents cleared');
+    };
+
+    // ---------- New from Scan ----------
+    // Everything the browser can display is re-encoded to JPEG through a canvas,
+    // which also covers HEIC from an iPhone camera and bakes in EXIF rotation.
+    $('home-scan').onclick = () => $('scan-input').click();
+    $('scan-input').onchange = e => {
+      const files = [...e.target.files];
+      e.target.value = '';
+      if (files.length) run('Scan', () => scanToPdf(files));
+    };
+    async function imageToJpeg(file, maxDim = 2200, quality = 0.85) {
+      let src;
+      try {
+        src = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      } catch {
+        const url = URL.createObjectURL(file);
+        try {
+          const im = new Image();
+          im.src = url;
+          await im.decode();
+          src = im;
+        } finally { setTimeout(() => URL.revokeObjectURL(url), 5000); }
+      }
+      const w = src.width || src.naturalWidth, h = src.height || src.naturalHeight;
+      if (!w || !h) throw new Error('could not read ' + file.name);
+      const scale = Math.min(1, maxDim / Math.max(w, h));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w * scale));
+      c.height = Math.max(1, Math.round(h * scale));
+      c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+      if (src.close) src.close();
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', quality));
+      if (!blob) throw new Error('could not encode ' + file.name);
+      return { bytes: toU8(await blob.arrayBuffer()), w: c.width, h: c.height };
+    }
+    async function scanToPdf(files) {
+      showBusy('Building PDF…', `${files.length} image${files.length === 1 ? '' : 's'}`);
+      try {
+        const doc = await PDFDocument.create();
+        let n = 0;
+        for (const f of files) {
+          n++;
+          $('busy-sub').textContent = `Image ${n} of ${files.length}`;
+          await nextFrame();
+          const { bytes, w, h } = await imageToJpeg(f);
+          const img = await doc.embedJpg(bytes);
+          const pw = 612, ph = Math.round(pw * (h / w));
+          const page = doc.addPage([pw, ph]);
+          page.drawImage(img, { x: 0, y: 0, width: pw, height: ph });
+        }
+        const out = toU8(await doc.save());
+        const name = `Scan ${new Date().toISOString().slice(0, 10)}.pdf`;
+        hideBusy();
+        await openFileNow(new File([out], name, { type: 'application/pdf' }), { type: 'local' });
+        markDirty();   // a scan has never been saved anywhere
+        setStatus(`Created ${name} from ${files.length} image${files.length === 1 ? '' : 's'}`);
+      } finally { hideBusy(); }
+    }
+
+    // ---------- Pages panel ----------
+    // Selection is by page number. Every operation goes through editPdf, which
+    // refuses to touch a signed document and flushes pending annotations first.
+    let pageSel = new Set();
+    let pageObserver = null;
+
+    function openPagesPanel() {
+      if (!pdfDoc) return;
+      setTool('select');
+      if (!pageSel.size) pageSel.add(currentPage);
+      buildPageRows();
+      openPanel('pages-panel');
+    }
+    $('tools-btn').onclick = openPagesPanel;
+
+    function updatePageOps() {
+      const n = pageSel.size;
+      const note = $('page-sel-note');
+      note.textContent = n
+        ? `${n} page${n === 1 ? '' : 's'} selected. Drag the grip, or use the arrows, to reorder.`
+        : 'Tap pages to select them. Drag the grip, or use the arrows, to reorder.';
+      ['op-insert', 'op-rotate', 'op-extract', 'op-duplicate', 'op-delete'].forEach(id => $(id).disabled = !n);
+      $('op-delete').disabled = !n || n >= totalPages;
+      $('pages-selall').textContent = n === totalPages ? 'Select none' : 'Select all';
+    }
+
+    function buildPageRows() {
+      const host = $('page-rows');
+      host.textContent = '';
+      if (pageObserver) pageObserver.disconnect();
+      pageObserver = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) renderPageRowThumb(e.target); }),
+        { root: host.parentElement, rootMargin: '300px' });
+      for (let i = 1; i <= totalPages; i++) {
+        const row = document.createElement('div');
+        row.className = 'page-row' + (pageSel.has(i) ? ' sel' : '');
+        row.dataset.page = i;
+
+        const thumb = document.createElement('div');
+        thumb.className = 'pr-thumb';
+
+        const label = document.createElement('div');
+        label.className = 'pr-label';
+        label.textContent = 'Page ' + i;
+        const sub = document.createElement('small');
+        sub.textContent = i === currentPage ? 'Showing now' : '';
+        label.appendChild(sub);
+
+        const move = document.createElement('div');
+        move.className = 'pr-move';
+        const up = document.createElement('button');
+        up.type = 'button'; up.textContent = '▲'; up.title = 'Move up'; up.setAttribute('aria-label', `Move page ${i} up`);
+        up.disabled = i === 1;
+        up.onclick = e => { e.stopPropagation(); movePage(i, i - 1); };
+        const down = document.createElement('button');
+        down.type = 'button'; down.textContent = '▼'; down.title = 'Move down'; down.setAttribute('aria-label', `Move page ${i} down`);
+        down.disabled = i === totalPages;
+        down.onclick = e => { e.stopPropagation(); movePage(i, i + 1); };
+        move.append(up, down);
+
+        const grip = document.createElement('button');
+        grip.type = 'button'; grip.className = 'pr-grip'; grip.textContent = '⠿';
+        grip.title = 'Drag to reorder'; grip.setAttribute('aria-label', `Drag page ${i} to reorder`);
+        attachDrag(grip, row);
+
+        row.append(thumb, label, move, grip);
+        row.onclick = () => {
+          if (pageSel.has(i)) pageSel.delete(i); else pageSel.add(i);
+          row.classList.toggle('sel', pageSel.has(i));
+          updatePageOps();
+        };
+        host.appendChild(row);
+        pageObserver.observe(row);
+      }
+      updatePageOps();
+    }
+
+    async function renderPageRowThumb(row) {
+      if (row._done || !pdfDoc) return;
+      row._done = true;
+      const n = +row.dataset.page;
+      const v = docVersion;
+      try {
+        const page = await pdfDoc.getPage(n);
+        if (v !== docVersion) return;
+        const base = page.getViewport({ scale: 1 });
+        const vp = page.getViewport({ scale: Math.min(76 / base.width, 100 / base.height) });
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.ceil(vp.width));
+        c.height = Math.max(1, Math.ceil(vp.height));
+        await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+        if (v !== docVersion) return;
+        const host = row.querySelector('.pr-thumb');
+        host.textContent = '';
+        host.appendChild(c);
+      } catch { row._done = false; }
+    }
+
+    // Pointer-based reordering so it works with a mouse and with touch.
+    function attachDrag(grip, row) {
+      grip.addEventListener('pointerdown', e => {
+        if (signed) { lockedNotice(); return; }
+        e.preventDefault();
+        e.stopPropagation();
+        grip.setPointerCapture(e.pointerId);
+        const host = row.parentElement;
+        row.classList.add('dragging');
+        let target = null;
+        const onMove = ev => {
+          const rows = [...host.children];
+          host.querySelectorAll('.drop-before, .drop-after').forEach(r => r.classList.remove('drop-before', 'drop-after'));
+          target = null;
+          for (const r of rows) {
+            if (r === row) continue;
+            const b = r.getBoundingClientRect();
+            if (ev.clientY >= b.top && ev.clientY <= b.bottom) {
+              const after = ev.clientY > b.top + b.height / 2;
+              r.classList.add(after ? 'drop-after' : 'drop-before');
+              target = { page: +r.dataset.page, after };
+              break;
+            }
+          }
+        };
+        const onUp = () => {
+          grip.removeEventListener('pointermove', onMove);
+          grip.removeEventListener('pointerup', onUp);
+          grip.removeEventListener('pointercancel', onUp);
+          row.classList.remove('dragging');
+          host.querySelectorAll('.drop-before, .drop-after').forEach(r => r.classList.remove('drop-before', 'drop-after'));
+          if (!target) return;
+          const from = +row.dataset.page;
+          let to = target.after ? target.page + 1 : target.page;
+          if (to > from) to -= 1;
+          if (to !== from) movePage(from, to);
+        };
+        grip.addEventListener('pointermove', onMove);
+        grip.addEventListener('pointerup', onUp);
+        grip.addEventListener('pointercancel', onUp);
+      });
+    }
+
+    function movePage(from, to) {
+      if (from === to || to < 1 || to > totalPages) return;
+      run('Reorder', async () => {
+        const ok = await editPdf(doc => {
+          const pg = doc.getPages()[from - 1];
+          doc.removePage(from - 1);
+          doc.insertPage(to - 1, pg);
+        });
+        if (!ok) return;
+        pageSel = new Set([...pageSel].map(n => n === from ? to : n > from && n <= to ? n - 1 : n < from && n >= to ? n + 1 : n));
+        if (currentPage === from) currentPage = to;
+        buildPageRows();
+        setStatus(`Moved page ${from} to position ${to}`);
+      });
+    }
+
+    const selectedPages = () => [...pageSel].sort((a, b) => a - b);
+
+    $('pages-selall').onclick = () => {
+      if (pageSel.size === totalPages) pageSel.clear();
+      else for (let i = 1; i <= totalPages; i++) pageSel.add(i);
+      buildPageRows();
+    };
+    $('op-rotate').onclick = () => run('Rotate', async () => {
+      const sel = selectedPages();
+      if (!sel.length) return;
+      if (await editPdf(doc => sel.forEach(n => {
+        const pg = doc.getPage(n - 1);
+        pg.setRotation(degrees((pg.getRotation().angle + 90) % 360));
+      }))) { buildPageRows(); setStatus(`Rotated ${sel.length} page${sel.length === 1 ? '' : 's'}`); }
+    });
+    $('op-delete').onclick = () => run('Delete', async () => {
+      const sel = selectedPages();
+      if (!sel.length) return;
+      if (sel.length >= totalPages) { setStatus('A PDF needs at least one page'); return; }
+      if (!confirm(`Delete ${sel.length} page${sel.length === 1 ? '' : 's'}?`)) return;
+      if (await editPdf(doc => [...sel].reverse().forEach(n => doc.removePage(n - 1)))) {
+        pageSel.clear();
+        currentPage = clampPage(currentPage);
+        buildPageRows();
+        setStatus(`Deleted ${sel.length} page${sel.length === 1 ? '' : 's'}`);
+      }
+    });
+    $('op-insert').onclick = () => run('Insert', async () => {
+      const sel = selectedPages();
+      const at = sel.length ? sel[sel.length - 1] : totalPages;
+      if (await editPdf(doc => {
+        const ref = doc.getPage(Math.max(0, at - 1));
+        const { width, height } = ref.getSize();
+        doc.insertPage(at, [width, height]);
+      })) {
+        pageSel = new Set([at + 1]);
+        buildPageRows();
+        setStatus('Blank page inserted after page ' + at);
+      }
+    });
+    $('op-duplicate').onclick = () => run('Duplicate', async () => {
+      const sel = selectedPages();
+      if (!sel.length) return;
+      if (await editPdf(async doc => {
+        const copies = await doc.copyPages(doc, sel.map(n => n - 1));
+        const at = sel[sel.length - 1];
+        copies.forEach((pg, i) => doc.insertPage(at + i, pg));
+      })) {
+        buildPageRows();
+        setStatus(`Duplicated ${sel.length} page${sel.length === 1 ? '' : 's'}`);
+      }
+    });
+    $('op-extract').onclick = () => run('Extract', async () => {
+      const sel = selectedPages();
+      if (!sel.length) return;
+      showBusy('Extracting…', `${sel.length} page${sel.length === 1 ? '' : 's'}`);
+      try {
+        if (hasInk()) await editPdf(null);
+        const src = await PDFDocument.load(pdfBytes);
+        const out = await PDFDocument.create();
+        const pages = await out.copyPages(src, sel.map(n => n - 1));
+        pages.forEach(pg => out.addPage(pg));
+        const name = originalName.replace(/\.pdf$/i, '') + ` - pages ${sel.join(',')}.pdf`;
+        download(toU8(await out.save()), name);
+        setStatus(`Extracted ${sel.length} page${sel.length === 1 ? '' : 's'}`);
+      } finally { hideBusy(); }
+    });
+    $('op-addfile').onclick = () => {
+      if (signed) { lockedNotice(); return; }
+      showOpenSheet('add');
+    };
+
+    // ---------- Export format ----------
+    // Flattening renders each page to an image, so a destination that has to be
+    // reached straight from a tap (the share sheet) never waits on it: the
+    // flattened copy is built the moment the format is chosen and cached.
+    let exportFormat = 'keep';
+    let flatCache = null, flatVersion = -1;
+
+    async function buildFlat() {
+      if (flatCache && flatVersion === docVersion) return flatCache;
+      showBusy('Flattening…', 'Rendering each page as an image');
+      try {
+        const doc = await PDFDocument.create();
+        for (let n = 1; n <= totalPages; n++) {
+          $('busy-sub').textContent = `Page ${n} of ${totalPages}`;
+          await nextFrame();
+          const src = await pdfDoc.getPage(n);
+          const vp = src.getViewport({ scale: 1 });
+          const c = await pageCanvas(n, 2);
+          const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
+          const img = await doc.embedJpg(toU8(await blob.arrayBuffer()));
+          const page = doc.addPage([vp.width, vp.height]);
+          page.drawImage(img, { x: 0, y: 0, width: vp.width, height: vp.height });
+        }
+        flatCache = toU8(await doc.save());
+        flatVersion = docVersion;
+        return flatCache;
+      } finally { hideBusy(); }
+    }
+    const exportBytes = () => exportFormat === 'flatten' ? buildFlat() : Promise.resolve(pdfBytes);
+
+    function paintExportFormat() {
+      $('export-format').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.val === exportFormat));
+      $('export-format-note').textContent = exportFormat === 'flatten'
+        ? 'Every page becomes an image: drawings and signatures are baked in, and the text is no longer selectable or searchable. A digital signature cannot survive this.'
+        : 'Drawings and signatures are written as vectors, so text stays selectable and searchable.';
+    }
+    $('export-format').querySelectorAll('button').forEach(b => {
+      b.onclick = () => run('Export', async () => {
+        exportFormat = b.dataset.val;
+        paintExportFormat();
+        if (exportFormat === 'flatten' && pdfBytes) await buildFlat();
+      });
+    });
+
+    // ---------- Fully local only ----------
+    function applyLocalOnly() {
+      const on = !!cfg.localOnly;
+      $('home-gdrive').style.display = on ? 'none' : '';
+      $('settings-google').disabled = on;
+      $('settings-google').textContent = on ? 'Disabled'
+        : !driveConfigured ? 'How it works'
+        : (signedIn() ? 'Manage' : 'Connect');
+      $('set-timestamp').disabled = on;
+      $('add-timestamp').disabled = on;
+      if (on) {
+        if (cfg.timestamp) setCfg('timestamp', false);
+        $('set-timestamp').checked = false;
+        $('add-timestamp').checked = false;
+      }
+      $('gdrive-state').textContent = on ? 'Turned off by "Fully local only"'
+        : !driveConfigured ? 'Available through your device\'s Google Drive app'
+        : signedIn() ? 'Connected' : 'Not connected';
     }
 
     // ---------- Settings panel ----------
@@ -3294,10 +4390,15 @@
       bindText('set-location', 'location');
       bindText('set-contact', 'contact');
       bindSwitch('set-auditpage', 'auditPage');
+      bindSwitch('set-showhash', 'showHash');
       bindSwitch('set-timestamp', 'timestamp');
+      bindSwitch('set-localonly', 'localOnly', applyLocalOnly);
+      bindSwitch('set-recents', 'recents', () => { renderRecents(); if (!cfg.recents) recentWipe(); });
 
-      bindSwatches('set-pen', PEN_COLORS, 'pen', () => { penColor = cfg.pen; buildPenSwatches(); });
-      bindRange('set-stroke', 'stroke', 'stroke-val', v => (+v).toFixed(1) + ' pt', null, 10);
+      bindSwatches('set-pen', PEN_COLORS, 'pen', () => { if (isAnnotating()) buildPenSwatches(); });
+      bindRange('set-stroke', 'stroke', 'stroke-val', v => (+v).toFixed(1) + ' pt', syncInspectorIfOpen, 10);
+      bindSwatches('set-hl', HL_COLORS, 'hl', () => { if (isAnnotating()) buildPenSwatches(); });
+      bindRange('set-hlwidth', 'hlWidth', 'hlwidth-val', v => Math.round(+v) + ' pt', syncInspectorIfOpen, 10);
       bindRange('set-eraser', 'eraser', 'eraser-val', v => v + ' px');
 
       bindSelect('ocr-lang', 'ocrLang');
@@ -3308,7 +4409,21 @@
       bindSwitch('set-sidebar', 'sidebar', applySidebar);
 
       $('about-version').textContent = 'Version ' + OBSERVER_VERSION;
-      penColor = cfg.pen;
+      applyLocalOnly();
+    }
+    // The inspector and Settings edit the same values, so each refreshes the other.
+    function syncInspectorIfOpen() { if (isAnnotating()) syncInspector(); }
+    function syncSettingsRanges() {
+      if (!$('settings-panel').classList.contains('open')) return;
+      $('set-stroke').value = Math.round(cfg.stroke * 10);
+      $('stroke-val').textContent = cfg.stroke.toFixed(1) + ' pt';
+      $('set-hlwidth').value = Math.round(cfg.hlWidth * 10);
+      $('hlwidth-val').textContent = Math.round(cfg.hlWidth) + ' pt';
+    }
+    function syncSettingsSwatches() {
+      if (!$('settings-panel').classList.contains('open')) return;
+      bindSwatches('set-pen', PEN_COLORS, 'pen', () => { if (isAnnotating()) buildPenSwatches(); });
+      bindSwatches('set-hl', HL_COLORS, 'hl', () => { if (isAnnotating()) buildPenSwatches(); });
     }
 
     $('reset-defaults').onclick = () => {
@@ -3317,9 +4432,18 @@
       applyTheme();
       initSettingsUI();
       applySidebar();
+      applyLocalOnly();
       renderIdStatus();
+      renderRecents();
+      if (isAnnotating()) { buildPenSwatches(); syncInspector(); }
       if (pdfDoc) { setViewMode(cfg.viewMode); setZoom(cfg.zoom); }
       setStatus('Settings reset to defaults');
+    };
+    $('clear-recents').onclick = async () => {
+      if (!confirm('Clear the list of recent documents from this device?')) return;
+      await recentWipe();
+      renderRecents();
+      setStatus('Recent documents cleared');
     };
     $('export-settings').onclick = () => {
       const out = { app: 'Observer PDF Studio', version: OBSERVER_VERSION, exported: new Date().toISOString(), settings: {} };
@@ -3327,19 +4451,23 @@
       download(new TextEncoder().encode(JSON.stringify(out, null, 2)), 'observer-settings.json', 'application/json');
       setStatus('Settings exported');
     };
-    $('clear-data').onclick = () => {
+    $('clear-data').onclick = async () => {
       if (!confirm('Clear all Observer data stored in this browser?\n\nThis removes your settings, the saved signature drawing and every Digital ID. Back up your Digital ID first if you still need it. Your PDF files are not touched.')) return;
       try {
         Object.keys(localStorage).filter(k => k.startsWith('observer-')).forEach(k => localStorage.removeItem(k));
       } catch (e) { console.warn(e); }
+      await recentWipe();
       setStatus('Local data cleared — reloading…', 0);
       setTimeout(() => location.reload(), 700);
     };
 
     initSettingsUI();
     applySidebar();
+    applyLocalOnly();
     updateLock();
+    updateUndoButtons();
     renderIdStatus();
+    renderRecents();
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }

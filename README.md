@@ -24,8 +24,12 @@ Local-first PDF studio aiming to replace Adobe Acrobat and DocuSign. Everything 
 - **Google Drive, no sign-in needed**: works just like iCloud Drive, through your device. On iPhone/iPad the Google Drive app shows up in the Files picker and the share sheet; on Android, Drive is in the system file picker and share sheet; on Mac/Windows, Google Drive for desktop appears as a folder you can open from and save to (in Chrome/Edge, "Save over original" writes straight back to Drive). The Google Drive button shows short instructions for your device
 - **Optional direct Google sign-in**: if you add a Google OAuth Client ID to `config.js`, Observer also offers Sign in with Google, recent Drive files, the Google Picker and saving back to Drive from any browser. See setup below
 - **OCR** the current page (Tesseract.js, on-device), optionally the moment a file opens
-- **Customisable**: a full settings panel for theme (dark / light / system), accent colour, interface size, signing defaults, pen colour and width, eraser size, OCR language, default reading mode and zoom, and the thumbnails sidebar. Everything is stored on the device and applies straight away
-- **Draw and erase**: pick a pen colour and width, or switch to the eraser to remove strokes you have not saved yet
+- **Home screen** with a working **Recent** list: documents you open are kept in this browser so you can reopen them, iPhone included. Turn it off or clear it in Settings → Privacy & data
+- **New from Scan**: photograph pages or pick images, and Observer builds a PDF from them (HEIC from an iPhone camera included)
+- **Annotate**: a Draw tool and a translucent **Highlight** tool, each with its own colour, width and opacity, plus an eraser and full **undo / redo** (Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z)
+- **Pages panel**: select pages and insert, duplicate, rotate, delete, extract to a new PDF, or add another file; reorder by dragging the grip or with the arrows
+- **Export / Share**: keep annotations as vectors (text stays selectable) or **flatten** every page to an image, then send it to Files / iCloud Drive, Google Drive, or a download
+- **Customisable**: a settings panel for theme (dark / light / system), accent colour, interface size, signing defaults, pen and highlighter, eraser size, OCR language, default reading mode and zoom, the thumbnails sidebar, and a **Fully local only** switch that hides every cloud destination. Everything is stored on the device and applies straight away
 - Rotate / delete pages, combine multiple PDFs (your edits to the current file are kept)
 - Works offline after the first visit (service worker); installable on iPhone via Add to Home Screen
 
@@ -65,7 +69,9 @@ Notes:
 - After changing anything in `vendor/` or `icons/`, bump `VERSION` in `sw.js` so installed apps pick up the new files.
 - Google sign-in (`accounts.google.com/gsi/client`) and the Picker (`apis.google.com/js/api.js`) are only loaded when you open the account, Open or Save menu, and only if `config.js` has a Client ID.
 - Digital IDs and the saved signature image are stored in the browser's localStorage on this device. Clearing site data removes them, so back up your Digital ID. Settings → Privacy & data has **Clear local data**, which removes all of it at once, and **Export settings**, which writes a JSON copy of your preferences (never any key material).
-- Settings live in localStorage under `observer-*` keys (`observer-theme`, `observer-accent`, `observer-name`, `observer-ocr`, and so on). Theming is driven by CSS custom properties on `:root`, so a new accent or theme needs no changes to the rules themselves.
+- Settings live in localStorage under `observer-*` keys (`observer-theme`, `observer-accent`, `observer-name`, `observer-ocr`, and so on). Theming is driven by CSS custom properties on `:root`, so a new accent or theme needs no changes to the rules themselves. The colour drawn on the accent is picked at runtime by WCAG contrast rather than a lightness threshold.
+- Recent documents are stored in IndexedDB (`observer-recents`), contents included, capped at 12 files and 80 MB with the oldest dropped first. That is the only way Recent can reopen a file on iPhone, where a file handle cannot be kept. Settings → Privacy & data turns it off and clears it.
+- `run()` holds a single busy lock, so a function that already runs inside it must call `openFileNow()` rather than `openFile()` — a nested `run()` is ignored and would silently drop the document.
 - SHA-256 hashing uses `crypto.subtle`, which browsers only expose on https or localhost. Over a plain LAN IP, Observer still signs but reports the content hash as unavailable.
 - The RFC 3161 request is a DER `TimeStampReq` built with node-forge and posted as `application/timestamp-query`. That content type makes the browser send a CORS preflight, so a timestamp server only works here if it answers `OPTIONS` with the right `Access-Control-Allow-*` headers. Failures are non-fatal: signing continues without a timestamp.
 

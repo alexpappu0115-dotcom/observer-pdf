@@ -1,6 +1,6 @@
 // Observer service worker: makes the app work offline after the first visit.
 // Bump VERSION whenever vendor/ or icons/ change so phones pick up the new files.
-const VERSION = 'observer-v7';
+const VERSION = 'observer-v8';
 const CORE = [
   './',
   'index.html',
