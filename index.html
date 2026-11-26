@@ -12,16 +12,73 @@
   <meta name="apple-mobile-web-app-title" content="Observer">
   <meta name="theme-color" content="#141311">
   <style>
+    /* ---------------------------------------------------------------
+       Theming. Every colour in Observer comes from one of these tokens,
+       so Settings can swap the whole look by changing a handful of them.
+       Dark is the default; [data-theme="light"] overrides it. The accent
+       (brass by default) and --ui-scale are written to the root element
+       by Settings at runtime.
+       --------------------------------------------------------------- */
     :root {
-      --ink: #141311;
-      --cream: #f4f0e8;
-      --brass: #c6a36a;
-      --clay: #b55245;
-      --dark-bg: #0c0d0f;
-      --text: #eceae6;
+      color-scheme: dark;
+      --accent: #c6a36a;
+      --accent-ink: #141311;          /* text drawn on top of the accent */
+      --danger: #b55245;
+      --bg: #0c0d0f;
+      --surface: #141311;             /* header and bottom bar */
       --panel: #1a1b1e;
       --elev: #222326;
+      --elev2: #2d2e33;
+      --border: #2a2a2a;
+      --border-soft: #333;
+      --text: #eceae6;
+      --strong: #f4f0e8;              /* headings and emphasis */
+      --dim: #aaa;
+      --dim2: #8f8f8f;
+      --viewer-bg: #0a0a0a;
+      --warn-bg: #2a2116;
+      --warn-bg2: #4a3720;
+      --shadow: rgba(0,0,0,0.6);
+      --page-shadow: rgba(0,0,0,0.6);
+      --scrim: rgba(0,0,0,0.78);
+      --scrim-soft: rgba(0,0,0,0.4);
+      --ui-scale: 1;
+      --accent-tint: rgba(198,163,106,0.10);
+      --accent-tint: color-mix(in srgb, var(--accent) 10%, transparent);
+      --accent-tint-strong: rgba(198,163,106,0.20);
+      --accent-tint-strong: color-mix(in srgb, var(--accent) 20%, transparent);
+      --accent-line: color-mix(in srgb, var(--accent) 35%, var(--border));
+      /* Legacy names kept so existing rules keep working */
+      --ink: var(--surface);
+      --cream: var(--strong);
+      --brass: var(--accent);
+      --clay: var(--danger);
+      --dark-bg: var(--bg);
     }
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f6f4ef;
+      --surface: #fffdf8;
+      --panel: #ffffff;
+      --elev: #ece8e0;
+      --elev2: #dedad1;
+      --border: #ddd7cc;
+      --border-soft: #e3ded4;
+      --text: #22201c;
+      --strong: #100f0d;
+      --dim: #6d6a63;
+      --dim2: #85817a;
+      --viewer-bg: #e8e5de;
+      --warn-bg: #fdf3dc;
+      --warn-bg2: #f6e4b4;
+      --shadow: rgba(0,0,0,0.18);
+      --page-shadow: rgba(0,0,0,0.22);
+      --scrim: rgba(40,36,28,0.45);
+      --scrim-soft: rgba(40,36,28,0.25);
+    }
+    /* The accent is user-chosen, so Settings recomputes --accent-ink at
+       runtime: whichever of ink or white contrasts better against it. */
+    html { font-size: calc(100% * var(--ui-scale)); }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
@@ -36,7 +93,7 @@
       background: var(--ink);
       padding: calc(0.7rem + env(safe-area-inset-top)) 1rem 0.7rem;
       display: block;
-      border-bottom: 1px solid #2a2a2a;
+      border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 100;
@@ -78,7 +135,7 @@
       left: 0;
       right: 0;
       background: var(--ink);
-      border-top: 1px solid #2a2a2a;
+      border-top: 1px solid var(--border);
       padding: 0.6rem 0.8rem calc(0.6rem + env(safe-area-inset-bottom));
       display: none;
       flex-wrap: wrap;
@@ -97,8 +154,8 @@
     }
 
     button, .btn {
-      background: var(--brass);
-      color: var(--ink);
+      background: var(--accent);
+      color: var(--accent-ink);
       border: none;
       padding: 0.5rem 0.9rem;
       font-family: inherit;
@@ -118,26 +175,26 @@
       margin: 2rem 1.2rem;
       padding: 3.5rem 1.5rem;
       text-align: center;
-      background: rgba(198,163,106,0.05);
+      background: var(--accent-tint);
       cursor: pointer;
       transition: background 0.2s;
       display: block;
     }
-    #dropzone:active { background: rgba(198,163,106,0.12); }
+    #dropzone:active { background: var(--accent-tint-strong); }
     #dropzone h2 { font-size: 1.3rem; margin-bottom: 0.4rem; color: var(--cream); }
-    #dropzone p { color: #aaa; font-size: 0.95rem; }
+    #dropzone p { color: var(--dim); font-size: 0.95rem; }
 
     #workspace { display: none; flex: 1; flex-direction: column; padding-bottom: 120px; }
     #viewer-wrap {
       flex: 1;
       overflow: auto;
-      background: #0a0a0a;
+      background: var(--viewer-bg);
       padding: 1rem 8px;
     }
     #page-stack {
       position: relative;
       margin: 0 auto;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+      box-shadow: 0 8px 40px var(--page-shadow);
       background: white;
     }
     #pdf-canvas { display: block; }
@@ -170,12 +227,12 @@
     .flow.two { display: grid; grid-template-columns: repeat(2, max-content); justify-content: center; align-items: start; }
     .flow.two .page-slot:nth-child(odd) { justify-self: end; }
     .flow.two .page-slot:nth-child(even) { justify-self: start; }
-    .page-slot { position: relative; background: white; box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
-    .page-slot.loading::after { content: attr(data-page); position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 1.4rem; }
+    .page-slot { position: relative; background: white; box-shadow: 0 6px 30px var(--page-shadow); }
+    .page-slot.loading::after { content: attr(data-page); position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--dim); font-size: 1.4rem; }
 
     /* Reflow (text) mode */
-    .reflow { max-width: 42em; margin: 0 auto; padding: 0.5rem 1rem 2rem; color: #e8e4dc; line-height: 1.6; font-family: Georgia, "Times New Roman", serif; }
-    .reflow section { padding: 0.6rem 0 1rem; border-bottom: 1px solid #2a2a2a; }
+    .reflow { max-width: 42em; margin: 0 auto; padding: 0.5rem 1rem 2rem; color: var(--text); line-height: 1.6; font-family: Georgia, "Times New Roman", serif; }
+    .reflow section { padding: 0.6rem 0 1rem; border-bottom: 1px solid var(--border); }
     .reflow .reflow-page { font-family: -apple-system, system-ui, sans-serif; font-size: 0.72rem; color: var(--brass); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
     .reflow p { margin: 0 0 0.9em; overflow-wrap: anywhere; }
     .reflow mark { background: rgba(255, 205, 40, 0.5); color: inherit; border-radius: 2px; }
@@ -183,31 +240,31 @@
 
     /* Side panel */
     .drawer { position: fixed; top: var(--header-h, 64px); bottom: 0; left: 0; width: min(300px, 86vw); background: var(--panel);
-      border-right: 1px solid #333; z-index: 150; transform: translateX(-102%); transition: transform 0.2s ease; display: flex; flex-direction: column; }
-    .drawer.open { transform: none; box-shadow: 8px 0 30px rgba(0,0,0,0.5); }
-    .drawer-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 140; display: none; }
+      border-right: 1px solid var(--border-soft); z-index: 150; transform: translateX(-102%); transition: transform 0.2s ease; display: flex; flex-direction: column; }
+    .drawer.open { transform: none; box-shadow: 8px 0 30px var(--shadow); }
+    .drawer-scrim { position: fixed; inset: 0; background: var(--scrim-soft); z-index: 140; display: none; }
     .drawer.open + .drawer-scrim { display: block; }
-    .drawer-head { display: flex; gap: 0.3rem; padding: 0.5rem; border-bottom: 1px solid #333; align-items: center; }
-    .drawer-head .tab { background: transparent; color: #aaa; padding: 0.4rem 0.7rem; font-size: 0.82rem; }
+    .drawer-head { display: flex; gap: 0.3rem; padding: 0.5rem; border-bottom: 1px solid var(--border-soft); align-items: center; }
+    .drawer-head .tab { background: transparent; color: var(--dim); padding: 0.4rem 0.7rem; font-size: 0.82rem; }
     .drawer-head .tab.active { background: var(--elev); color: var(--cream); }
     .drawer-head .icon-btn { margin-left: auto; }
     .drawer-body { flex: 1; overflow: auto; padding: 0.6rem; padding-bottom: 130px; }
     #thumbs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; align-content: start; }
-    .thumb { background: transparent; padding: 0.25rem; border: 2px solid transparent; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; color: #aaa; font-size: 0.72rem; font-weight: 500; }
+    .thumb { background: transparent; padding: 0.25rem; border: 2px solid transparent; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; color: var(--dim); font-size: 0.72rem; font-weight: 500; }
     .thumb.current { border-color: var(--brass); color: var(--cream); }
-    .thumb .thumb-img { width: 100%; min-height: 120px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .thumb .thumb-img { width: 100%; min-height: 120px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px var(--shadow); }
     .thumb canvas { width: 100%; height: auto; display: block; }
     .outline-item { display: block; width: 100%; text-align: left; background: transparent; color: var(--text); font-weight: 400; font-size: 0.88rem; padding: 0.5rem 0.6rem; border-radius: 6px; }
     .outline-item:hover { background: var(--elev); }
-    .drawer-empty { color: #999; font-size: 0.85rem; padding: 0.5rem; }
+    .drawer-empty { color: var(--dim2); font-size: 0.85rem; padding: 0.5rem; }
 
     /* Search bar */
-    .search-bar { position: fixed; top: var(--header-h, 64px); left: 0; right: 0; z-index: 96; background: var(--panel); border-bottom: 1px solid #333;
+    .search-bar { position: fixed; top: var(--header-h, 64px); left: 0; right: 0; z-index: 96; background: var(--panel); border-bottom: 1px solid var(--border-soft);
       padding: 0.45rem 0.6rem; display: none; gap: 0.35rem; align-items: center; }
     .search-bar.show { display: flex; }
     .search-bar input { margin: 0; flex: 1; min-width: 0; padding: 0.5rem 0.6rem; font-size: 0.95rem; }
     .search-bar button { padding: 0.45rem 0.6rem; font-size: 0.8rem; }
-    #search-count { font-size: 0.78rem; color: #aaa; min-width: 3.5rem; text-align: center; white-space: nowrap; }
+    #search-count { font-size: 0.78rem; color: var(--dim); min-width: 3.5rem; text-align: center; white-space: nowrap; }
     body.searching #workspace { padding-top: 54px; }
     body.searching .float-bar { top: calc(var(--header-h, 64px) + 58px); }
 
@@ -232,7 +289,7 @@
       position: absolute;
       display: none;
       border: 1.5px dashed var(--clay);
-      background: rgba(198,163,106,0.10);
+      background: var(--accent-tint);
       touch-action: none;
       cursor: move;
       user-select: none;
@@ -242,7 +299,7 @@
 
     .lock-banner {
       display: none;
-      background: #2a2116;
+      background: var(--warn-bg);
       color: var(--cream);
       border-bottom: 1px solid var(--brass);
       padding: 0.6rem 1rem;
@@ -254,7 +311,7 @@
     }
     .lock-banner.show { display: flex; }
     .lock-banner.flash { animation: flash 0.6s ease 2; }
-    @keyframes flash { 50% { background: #4a3720; } }
+    @keyframes flash { 50% { background: var(--warn-bg2); } }
     .lock-banner button { flex-shrink: 0; font-size: 0.75rem; padding: 0.4rem 0.6rem; }
 
     .float-bar {
@@ -263,22 +320,22 @@
       left: 50%;
       transform: translateX(-50%);
       background: var(--panel);
-      border: 1px solid #333;
+      border: 1px solid var(--border-soft);
       border-radius: 14px;
       padding: 0.45rem;
       display: none;
       gap: 0.35rem;
       align-items: center;
       z-index: 95;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+      box-shadow: 0 6px 24px var(--page-shadow);
       max-width: 96vw;
       flex-wrap: wrap;
       justify-content: center;
     }
     .float-bar.show { display: flex; }
     .float-bar button { font-size: 0.78rem; padding: 0.45rem 0.7rem; }
-    .float-bar .hint { font-size: 0.75rem; color: #aaa; padding: 0 0.3rem; }
-    .swatch { width: 28px; height: 28px; border-radius: 50%; padding: 0; border: 2px solid transparent; }
+    .float-bar .hint { font-size: 0.75rem; color: var(--dim); padding: 0 0.3rem; }
+    .swatch { width: 28px; height: 28px; border-radius: 50%; padding: 0; border: 2px solid transparent; box-shadow: inset 0 0 0 1px rgba(128,128,128,0.5); }
     .swatch.selected { border-color: var(--cream); }
 
     .status-toast {
@@ -293,7 +350,7 @@
       font-size: 0.85rem;
       max-width: 90%;
       text-align: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 20px var(--shadow);
       z-index: 80;
       display: none;
     }
@@ -314,7 +371,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.78);
+      background: var(--scrim);
       z-index: 200;
       align-items: flex-end;
       justify-content: center;
@@ -332,12 +389,12 @@
     }
     .modal h3 { color: var(--brass); margin-bottom: 1rem; font-size: 1.15rem; }
     .modal h4 { color: var(--cream); margin: 1.2rem 0 0.4rem; font-size: 0.95rem; }
-    .modal .note { font-size: 0.8rem; color: #999; line-height: 1.4; margin: 0.5rem 0; }
+    .modal .note { font-size: 0.8rem; color: var(--dim2); line-height: 1.4; margin: 0.5rem 0; }
     canvas#sig-pad { background: #fff; border-radius: 8px; width: 100%; height: 150px; touch-action: none; margin: 0.5rem 0; display: block; }
-    input, select {
+    input, select, textarea {
       background: var(--elev);
-      color: white;
-      border: 1px solid #333;
+      color: var(--text);
+      border: 1px solid var(--border-soft);
       padding: 0.65rem;
       border-radius: 8px;
       width: 100%;
@@ -345,12 +402,12 @@
       font-size: 1rem;
     }
     .settings-row { margin-bottom: 1rem; }
-    .settings-row label { display: block; font-size: 0.85rem; color: #aaa; margin-bottom: 0.25rem; }
+    .settings-row label { display: block; font-size: 0.85rem; color: var(--dim); margin-bottom: 0.25rem; }
     .row-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .row-buttons > * { flex: 1 1 auto; text-align: center; }
     .page-info { font-size: 0.85rem; color: var(--brass); min-width: 56px; text-align: center; align-self: center; background: transparent; padding: 0.4rem 0.2rem; }
     #id-status { font-size: 0.85rem; color: var(--cream); background: var(--panel); border-radius: 8px; padding: 0.6rem; line-height: 1.4; }
-    #file-list { font-size: 0.82rem; color: #bbb; margin: 0.6rem 0; line-height: 1.5; }
+    #file-list { font-size: 0.82rem; color: var(--dim); margin: 0.6rem 0; line-height: 1.5; }
 
     input[type="file"] { position: absolute; left: -9999px; width: 1px; }
 
@@ -361,34 +418,34 @@
       background: var(--elev); color: var(--text); text-align: left; font-size: 0.95rem;
     }
     .sheet-btn .ico { font-size: 1.25rem; width: 1.6rem; text-align: center; }
-    .sheet-btn small { display: block; font-weight: 400; color: #999; font-size: 0.75rem; margin-top: 0.15rem; }
-    .sheet-btn.primary { background: var(--brass); color: var(--ink); }
-    .sheet-btn.primary small { color: #3a3226; }
+    .sheet-btn small { display: block; font-weight: 400; color: var(--dim2); font-size: 0.75rem; margin-top: 0.15rem; }
+    .sheet-btn.primary { background: var(--accent); color: var(--accent-ink); }
+    .sheet-btn.primary small { color: color-mix(in srgb, var(--accent-ink) 65%, var(--accent)); }
     .sheet-row { display: flex; gap: 0.5rem; }
-    .sheet-row > button { flex: 1; background: #34353a; margin-top: 0.5rem; }
-    .source-line { font-size: 0.8rem; color: #aaa; margin: -0.4rem 0 0.6rem; }
+    .sheet-row > button { flex: 1; background: var(--elev2); margin-top: 0.5rem; }
+    .source-line { font-size: 0.8rem; color: var(--dim); margin: -0.4rem 0 0.6rem; }
     #start { display: block; }
     .account-btn {
-      background: transparent; color: var(--brass); border: 1px solid #4a3f2c;
+      background: transparent; color: var(--brass); border: 1px solid var(--accent-line);
       padding: 0.3rem 0.65rem; font-size: 0.78rem; border-radius: 16px; white-space: nowrap;
     }
     .account-btn.has-avatar { border: none; padding: 0.1rem; }
     .avatar {
       display: inline-flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; border-radius: 50%;
-      background: #3a3326; color: var(--cream); font-size: 0.85rem; font-weight: 700;
-      border: 2px solid #5a5a5a;
+      background: var(--elev2); color: var(--cream); font-size: 0.85rem; font-weight: 700;
+      border: 2px solid var(--border-soft);
     }
     .avatar.on { border-color: var(--brass); }
     .avatar.big { width: 42px; height: 42px; font-size: 1.1rem; flex-shrink: 0; }
     .g-user { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.8rem; }
     .g-user:empty { display: none; }
-    .g-list { max-height: 38vh; overflow: auto; font-size: 0.85rem; color: #aaa; }
+    .g-list { max-height: 38vh; overflow: auto; font-size: 0.85rem; color: var(--dim); }
     .g-item {
       display: block; width: 100%; text-align: left; margin: 0.3rem 0; padding: 0.6rem 0.8rem;
       background: var(--elev); color: var(--text); font-weight: 500; word-break: break-word;
     }
-    .g-item small { display: block; color: #999; font-weight: 400; font-size: 0.72rem; margin-top: 0.1rem; }
+    .g-item small { display: block; color: var(--dim2); font-weight: 400; font-size: 0.72rem; margin-top: 0.1rem; }
     @media (max-width: 420px) {
       .logo span { display: none; }
       #zoom-label { min-width: 40px; padding: 0.3rem 0.2rem; }
@@ -398,9 +455,205 @@
     .steps { margin: 0.2rem 0 0.8rem 1.2rem; line-height: 1.5; font-size: 0.92rem; color: var(--text); }
     .steps li { margin: 0.35rem 0; }
     .steps b { color: var(--cream); }
-    .check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #aaa; margin: 0.4rem 0 0.9rem; }
+    .check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--dim); margin: 0.4rem 0 0.9rem; }
     .check input { width: auto; margin: 0; }
     .start-actions button { flex: 1; padding: 0.8rem 0.5rem; }
+    /* =============================================================
+       Settings panel and the rest of the 2.x interface
+       ============================================================= */
+
+    /* Sheets: on phones they rise from the bottom, on wide screens they
+       sit centred. Settings is tall, so it gets a sticky head and foot. */
+    .modal.tall {
+      max-height: min(88vh, 900px);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+    }
+    .sheet-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+      padding: 1rem 1.1rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .sheet-head h3 { margin: 0; }
+    .sheet-head .icon-btn { font-size: 1.1rem; }
+    .sheet-scroll { overflow: auto; padding: 0.4rem 1.1rem calc(1rem + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+    .sheet-foot {
+      display: flex; gap: 0.5rem;
+      padding: 0.7rem 1.1rem calc(0.7rem + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .sheet-foot > button { flex: 1; }
+
+    /* A settings section: a quiet label, then rows */
+    .sec { padding: 0.9rem 0 0.2rem; }
+    .sec + .sec { border-top: 1px solid var(--border); }
+    .sec > h4 {
+      color: var(--accent);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      margin: 0 0 0.6rem;
+    }
+    .sec .note { margin: 0.5rem 0 0.2rem; }
+
+    /* Row: label on the left, control on the right */
+    .srow {
+      display: flex; align-items: center; gap: 0.9rem;
+      min-height: 44px;
+      padding: 0.35rem 0;
+    }
+    .srow + .srow { border-top: 1px solid var(--border-soft); }
+    .srow .lbl { flex: 1; min-width: 0; font-size: 0.92rem; color: var(--text); }
+    .srow .lbl small { display: block; color: var(--dim2); font-size: 0.75rem; font-weight: 400; margin-top: 0.1rem; line-height: 1.35; }
+    .srow .ctl { flex-shrink: 0; display: flex; align-items: center; gap: 0.4rem; }
+    .srow .ctl select, .srow .ctl input[type="text"], .srow .ctl input[type="number"] {
+      margin: 0; width: auto; min-width: 7.5rem; padding: 0.5rem 0.55rem; font-size: 0.9rem;
+    }
+    /* Stacked field for anything that needs the full width */
+    .sfield { padding: 0.5rem 0; }
+    .sfield > label { display: block; font-size: 0.82rem; color: var(--dim); margin-bottom: 0.3rem; }
+    .sfield > input, .sfield > select { margin: 0; }
+
+    /* Switch */
+    .sw { position: relative; display: inline-block; width: 50px; height: 30px; flex-shrink: 0; }
+    .sw input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 2; }
+    .sw i {
+      position: absolute; inset: 0; border-radius: 999px;
+      background: var(--elev2); border: 1px solid var(--border-soft);
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+    .sw i::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--strong); box-shadow: 0 1px 3px var(--shadow);
+      transition: transform 0.18s ease;
+    }
+    .sw input:checked + i { background: var(--accent); border-color: var(--accent); }
+    .sw input:checked + i::after { transform: translateX(20px); background: var(--accent-ink); }
+    .sw input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* Segmented control */
+    .seg { display: inline-flex; background: var(--elev); border: 1px solid var(--border-soft); border-radius: 10px; padding: 2px; gap: 2px; }
+    .seg button {
+      background: transparent; color: var(--dim); font-size: 0.8rem; font-weight: 600;
+      padding: 0.42rem 0.7rem; border-radius: 8px; min-height: 36px;
+    }
+    .seg button.on { background: var(--accent); color: var(--accent-ink); }
+
+    /* Accent + pen colour swatches */
+    .swatch-row { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.2rem 0 0.4rem; }
+    .swatch-row .sw-dot {
+      width: 34px; height: 34px; border-radius: 50%; padding: 0;
+      border: 2px solid transparent; outline-offset: 2px; position: relative;
+      box-shadow: inset 0 0 0 1px rgba(128,128,128,0.5);
+    }
+    .swatch-row .sw-dot.on { border-color: var(--strong); }
+    .swatch-row .sw-dot.on::after {
+      content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* Range */
+    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; max-width: 160px; margin: 0; padding: 0; background: transparent; border: none; }
+    input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--elev2); }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -9px; border-radius: 50%; background: var(--accent); border: none; }
+    input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--elev2); }
+    input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border: none; border-radius: 50%; background: var(--accent); }
+    .range-val { font-size: 0.82rem; color: var(--dim); min-width: 3.2rem; text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* Signature sheet: fields read as one group, buttons are clearly ranked */
+    #sig-modal .modal h3 { margin-bottom: 0.5rem; }
+    .sig-hint { font-size: 0.78rem; color: var(--dim2); margin: 0 0 0.2rem; }
+    .sig-fields { display: grid; gap: 0.5rem; margin: 0.6rem 0 0.2rem; }
+    .sig-fields input { margin: 0; }
+    .sig-more {
+      background: transparent; color: var(--accent); padding: 0.4rem 0; font-size: 0.82rem;
+      text-align: left; min-height: 40px;
+    }
+    .sig-more::before { content: '▸ '; }
+    .sig-more.open::before { content: '▾ '; }
+    .sig-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.9rem; }
+    .sig-actions .wide { grid-column: 1 / -1; }
+    .check-row {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.85rem; color: var(--text); min-height: 44px; padding: 0.2rem 0;
+    }
+    .check-row .lbl { flex: 1; }
+    .check-row .lbl small { display: block; color: var(--dim2); font-size: 0.74rem; margin-top: 0.1rem; }
+
+    /* Signature receipt */
+    .receipt { background: var(--panel); border-radius: 12px; padding: 0.85rem; margin: 0.2rem 0 0.6rem; }
+    .receipt dl { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 0.8rem; font-size: 0.85rem; }
+    .receipt dt { color: var(--dim); white-space: nowrap; }
+    .receipt dd { color: var(--text); word-break: break-word; }
+    .hash {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.72rem; line-height: 1.5; color: var(--text);
+      background: var(--elev); border-radius: 8px; padding: 0.55rem 0.6rem;
+      word-break: break-all; user-select: all; -webkit-user-select: all;
+    }
+
+    /* Page-number badge over each rendered page */
+    .page-badge {
+      position: absolute; right: 8px; bottom: 8px; z-index: 5;
+      background: rgba(20,19,17,0.62); color: #f4f0e8;
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.02em;
+      padding: 0.15rem 0.45rem; border-radius: 999px;
+      pointer-events: none; font-variant-numeric: tabular-nums;
+    }
+    body.no-page-nums .page-badge, body.no-page-nums .thumb .cap { display: none; }
+
+    /* Quieter status toast: smaller, lower contrast, fades out */
+    .status-toast {
+      background: color-mix(in srgb, var(--panel) 88%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border-soft);
+      font-size: 0.8rem;
+      padding: 0.5rem 0.9rem;
+      box-shadow: 0 2px 10px var(--shadow);
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      pointer-events: none;
+    }
+    .status-toast.show { opacity: 1; }
+
+    /* Docked thumbnails sidebar when there is room for it */
+    @media (min-width: 1000px) {
+      body.docked.has-doc #drawer {
+        transform: none; box-shadow: none; border-right: 1px solid var(--border);
+        width: 260px; z-index: 80;
+      }
+      body.docked.has-doc #drawer + .drawer-scrim { display: none; }
+      body.docked.has-doc #workspace, body.docked.has-doc #start { margin-left: 260px; }
+      body.docked.has-doc .bottom-bar { left: 260px; }
+      body.docked.has-doc #drawer-close { display: none; }
+      body.docked.has-doc #thumbs { grid-template-columns: 1fr; }
+      /* Slightly denser toolbars with the extra room */
+      .bottom-bar { padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom)); gap: 0.35rem; }
+      .bottom-bar button { flex: 0 1 auto; min-width: 76px; }
+      .modal { border-radius: 18px; margin-bottom: 4vh; }
+      .modal-overlay { align-items: center; }
+    }
+    .thumb .cap { display: block; }
+
+    /* Touch-first sizing on phones */
+    @media (max-width: 620px) {
+      .bottom-bar button, .bottom-bar .btn { min-height: 46px; min-width: 60px; }
+      .float-bar button { min-height: 42px; }
+      .modal { padding-bottom: calc(1.6rem + env(safe-area-inset-bottom)); }
+      .sig-actions { grid-template-columns: 1fr; }
+    }
+    .eraser-size { font-size: 0.74rem; color: var(--dim); padding: 0 0.2rem; }
+    #erase-btn.active { background: var(--danger); color: #fff; }
+
   </style>
 </head>
 <body>
@@ -495,11 +748,10 @@
 
   <div id="print-root" aria-hidden="true"></div>
 
-  <!-- Drawing toolbar -->
+  <!-- Drawing toolbar. The pen swatches are built from the palette in Settings. -->
   <div id="draw-bar" class="float-bar">
-    <button class="swatch selected" data-color="#141311" style="background:#141311" aria-label="Black pen"></button>
-    <button class="swatch" data-color="#1f4fbf" style="background:#1f4fbf" aria-label="Blue pen"></button>
-    <button class="swatch" data-color="#b55245" style="background:#b55245" aria-label="Red pen"></button>
+    <span id="pen-swatches" style="display:flex; gap:0.35rem; align-items:center;"></span>
+    <button class="secondary" id="erase-btn">Erase</button>
     <button class="secondary" id="undo-ink">Undo</button>
     <button id="done-ink">Done</button>
   </div>
@@ -553,20 +805,39 @@
     </div>
   </div>
 
-  <!-- Signature Modal -->
+  <!-- Signature sheet -->
   <div id="sig-modal" class="modal-overlay">
     <div class="modal">
-      <h3>Signature</h3>
+      <h3>Sign</h3>
+      <p class="sig-hint">Draw your signature once — it is remembered on this device.</p>
       <canvas id="sig-pad"></canvas>
-      <input type="text" id="signer-name" placeholder="Your name" autocomplete="name">
-      <div class="row-buttons">
-        <button id="clear-sig" class="secondary">Clear</button>
-        <button id="apply-visual">Place signature</button>
+      <div class="sig-fields">
+        <input type="text" id="signer-name" placeholder="Your name" autocomplete="name">
+      </div>
+      <button type="button" class="sig-more" id="sig-more" aria-expanded="false" aria-controls="sig-extra">Signature details</button>
+      <div id="sig-extra" style="display:none;">
+        <div class="sig-fields">
+          <input type="text" id="sign-reason" placeholder="Reason (optional)">
+          <input type="text" id="sign-location" placeholder="Location (optional)">
+          <input type="text" id="sign-contact" placeholder="Contact / email (optional)">
+        </div>
+        <label class="check-row">
+          <span class="lbl">Audit certificate page<small id="audit-sub">A summary page added before signing, so the signature covers it</small></span>
+          <span class="sw"><input type="checkbox" id="add-audit"><i></i></span>
+        </label>
+        <label class="check-row">
+          <span class="lbl">Request trusted timestamp (RFC 3161)<small>Sends only a hash, never the document. Many public timestamp servers refuse browser requests, so this is often skipped</small></span>
+          <span class="sw"><input type="checkbox" id="add-timestamp"><i></i></span>
+        </label>
+      </div>
+      <div class="sig-actions">
+        <button class="secondary" id="apply-visual">Place signature</button>
         <button id="apply-cert">Digitally sign</button>
+        <button class="secondary" id="clear-sig">Clear drawing</button>
         <button class="secondary" data-close="sig-modal">Cancel</button>
       </div>
       <p class="note"><b>Place signature</b> stamps your drawn signature where you choose on the page.<br>
-        <b>Digitally sign</b> adds a tamper-evident certificate signature using your Digital ID (see Settings). Do it last, because any later edit invalidates it.</p>
+        <b>Digitally sign</b> seals the document with your Digital ID (Settings → Digital ID) and records a SHA-256 hash of what was signed. Do it last, because any later edit invalidates it.</p>
     </div>
   </div>
 
@@ -635,44 +906,211 @@
     </div>
   </div>
 
-  <!-- Settings Modal -->
+  <!-- Settings panel: a bottom sheet on phones, a centred card on wide screens -->
   <div id="settings-modal" class="modal-overlay">
+    <div class="modal tall">
+      <div class="sheet-head">
+        <h3>Settings</h3>
+        <button class="icon-btn" data-close="settings-modal" aria-label="Close settings">✕</button>
+      </div>
+      <div class="sheet-scroll">
+
+        <div class="sec">
+          <h4>Appearance</h4>
+          <div class="srow">
+            <span class="lbl">Theme</span>
+            <span class="ctl">
+              <span class="seg" id="set-theme" role="group" aria-label="Theme">
+                <button type="button" data-val="dark">Dark</button>
+                <button type="button" data-val="light">Light</button>
+                <button type="button" data-val="system">System</button>
+              </span>
+            </span>
+          </div>
+          <div class="sfield">
+            <label>Accent colour</label>
+            <div class="swatch-row" id="set-accent"></div>
+          </div>
+          <div class="srow">
+            <span class="lbl">Font size<small id="font-size-note">Scales the whole interface</small></span>
+            <span class="ctl">
+              <input type="range" id="set-fontsize" min="85" max="130" step="5" aria-label="Font size">
+              <span class="range-val" id="fontsize-val">100%</span>
+            </span>
+          </div>
+          <div class="srow">
+            <span class="lbl">Show page numbers<small>A small badge on each page</small></span>
+            <span class="ctl"><span class="sw"><input type="checkbox" id="set-pagenums"><i></i></span></span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h4>Signing defaults</h4>
+          <div class="sfield">
+            <label for="default-name">Default signer name</label>
+            <input type="text" id="default-name" placeholder="Your name" autocomplete="name">
+          </div>
+          <div class="sfield">
+            <label for="set-reason">Default reason</label>
+            <input type="text" id="set-reason" placeholder="Signed with Observer">
+          </div>
+          <div class="sfield">
+            <label for="set-location">Default location</label>
+            <input type="text" id="set-location" placeholder="Local">
+          </div>
+          <div class="sfield">
+            <label for="set-contact">Default contact / email</label>
+            <input type="text" id="set-contact" placeholder="Optional" autocomplete="email">
+          </div>
+          <div class="srow">
+            <span class="lbl">Append audit certificate page<small>Adds a signature summary page, covered by the signature</small></span>
+            <span class="ctl"><span class="sw"><input type="checkbox" id="set-auditpage"><i></i></span></span>
+          </div>
+          <div class="srow">
+            <span class="lbl">Request timestamp by default<small>RFC 3161 — the only feature that contacts a server. It sends a hash, never the document, and is skipped if the server refuses browser requests</small></span>
+            <span class="ctl"><span class="sw"><input type="checkbox" id="set-timestamp"><i></i></span></span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h4>Drawing &amp; annotation</h4>
+          <div class="sfield">
+            <label>Default pen colour</label>
+            <div class="swatch-row" id="set-pen"></div>
+          </div>
+          <div class="srow">
+            <span class="lbl">Stroke width</span>
+            <span class="ctl">
+              <input type="range" id="set-stroke" min="6" max="60" step="2" aria-label="Stroke width (tenths of a point)">
+              <span class="range-val" id="stroke-val">1.6 pt</span>
+            </span>
+          </div>
+          <div class="srow">
+            <span class="lbl">Eraser size<small>Erase in the drawing bar removes strokes not yet written into the PDF</small></span>
+            <span class="ctl">
+              <input type="range" id="set-eraser" min="6" max="60" step="2" aria-label="Eraser size">
+              <span class="range-val" id="eraser-val">18 px</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h4>OCR</h4>
+          <div class="srow">
+            <span class="lbl">Language</span>
+            <span class="ctl">
+              <select id="ocr-lang">
+                <option value="eng">English</option>
+                <option value="spa">Spanish</option>
+                <option value="fra">French</option>
+                <option value="deu">German</option>
+              </select>
+            </span>
+          </div>
+          <div class="srow">
+            <span class="lbl">Run OCR when a PDF opens<small>First page only. Downloads the engine the first time</small></span>
+            <span class="ctl"><span class="sw"><input type="checkbox" id="set-autoocr"><i></i></span></span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h4>Viewer</h4>
+          <div class="srow">
+            <span class="lbl">Default reading mode</span>
+            <span class="ctl">
+              <select id="set-viewmode">
+                <option value="single">Single page</option>
+                <option value="continuous">Continuous scroll</option>
+                <option value="two">Two pages</option>
+                <option value="reflow">Reflow text</option>
+              </select>
+            </span>
+          </div>
+          <div class="srow">
+            <span class="lbl">Default zoom</span>
+            <span class="ctl">
+              <select id="set-zoom">
+                <option value="0.75">75%</option>
+                <option value="1">Fit width</option>
+                <option value="1.25">125%</option>
+                <option value="1.5">150%</option>
+                <option value="2">200%</option>
+              </select>
+            </span>
+          </div>
+          <div class="srow">
+            <span class="lbl">Thumbnails sidebar<small>Kept open on wide screens</small></span>
+            <span class="ctl"><span class="sw"><input type="checkbox" id="set-sidebar"><i></i></span></span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h4>Digital ID</h4>
+          <div id="id-status"></div>
+          <p class="note">Without an imported certificate, Observer creates a self-signed Digital ID per name and keeps it on this device, so all your signatures share one identity. Acrobat will show it as "identity unknown" until the recipient trusts it. Import a certificate from a trusted provider (.p12 / .pfx) to get signatures Acrobat validates automatically.</p>
+          <div class="sfield">
+            <label for="p12-pwd">Certificate password (for import / backup)</label>
+            <input type="password" id="p12-pwd" autocomplete="off">
+          </div>
+          <div class="row-buttons">
+            <label for="p12-input" class="btn secondary">Import .p12</label>
+            <button class="secondary" id="export-id">Back up ID</button>
+            <button class="secondary" id="remove-id">Remove imported</button>
+          </div>
+        </div>
+
+        <div class="sec" id="settings-google-wrap">
+          <h4>Google account</h4>
+          <button class="secondary" id="settings-google" style="width:100%;">Manage Google sign-in</button>
+        </div>
+
+        <div class="sec">
+          <h4>Privacy &amp; data</h4>
+          <p class="note">Everything happens on this device: rendering, OCR, drawing and signing. Files only leave it when you save them somewhere yourself. The one exception is the optional RFC 3161 timestamp, which sends a hash — never the document — to a public timestamp server. If that server does not allow browser requests, Observer simply signs without it.</p>
+          <div class="row-buttons">
+            <button class="secondary" id="export-settings">Export settings</button>
+            <button class="secondary" id="clear-data">Clear local data…</button>
+          </div>
+          <p class="note">Clearing removes your settings, saved signature drawing and Digital IDs from this browser. Back up your Digital ID first if you still need it.</p>
+        </div>
+
+        <div class="sec">
+          <h4>About</h4>
+          <div class="srow">
+            <span class="lbl">Observer PDF Studio<small id="about-version">Version —</small></span>
+            <span class="ctl"><a class="btn secondary" id="about-repo" href="https://github.com/alexpappu0115-dotcom/observer-pdf" target="_blank" rel="noopener">GitHub</a></span>
+          </div>
+          <p class="note">A local-first PDF studio: read, search, annotate, OCR and digitally sign without uploading anything.</p>
+          <p class="note"><b>On signature trust:</b> Observer signs with PKCS#7 detached (adbe.pkcs7.detached) and SHA-256. A self-signed Digital ID is cryptographically sound — it proves the file has not changed since signing — but no public authority vouches for who holds it, so Acrobat shows "signature validity is unknown" until the recipient trusts the certificate. It is not on the Adobe Approved Trust List. Import a certificate from a trusted CA for signatures that validate automatically.</p>
+        </div>
+
+      </div>
+      <div class="sheet-foot">
+        <button class="secondary" id="reset-defaults">Reset to defaults</button>
+        <button data-close="settings-modal">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- What the signature produced -->
+  <div id="receipt-modal" class="modal-overlay">
     <div class="modal">
-      <h3>Settings</h3>
-      <div class="settings-row">
-        <label for="default-name">Default signer name</label>
-        <input type="text" id="default-name" placeholder="Your name" autocomplete="name">
+      <h3>Signature applied</h3>
+      <div class="receipt">
+        <dl>
+          <dt>Document ID</dt><dd id="rc-id"></dd>
+          <dt>Signer</dt><dd id="rc-signer"></dd>
+          <dt>Signed</dt><dd id="rc-time"></dd>
+          <dt>Format</dt><dd>PKCS#7 detached · SHA-256</dd>
+        </dl>
       </div>
-      <div class="settings-row">
-        <label for="ocr-lang">OCR language</label>
-        <select id="ocr-lang">
-          <option value="eng">English</option>
-          <option value="spa">Spanish</option>
-          <option value="fra">French</option>
-          <option value="deu">German</option>
-        </select>
+      <p class="note" style="margin-top:0;">SHA-256 of the document content that was signed:</p>
+      <div class="hash" id="rc-hash"></div>
+      <p class="note" id="rc-extra"></p>
+      <div class="row-buttons" style="margin-top:0.6rem;">
+        <button class="secondary" id="rc-copy">Copy hash</button>
+        <button data-close="receipt-modal">Done</button>
       </div>
-
-      <h4>Digital ID</h4>
-      <div id="id-status"></div>
-      <p class="note">Without an imported certificate, Observer creates a self-signed Digital ID per name and keeps it on this device, so all your signatures share one identity. Acrobat will show it as "identity unknown" until the recipient trusts it. Import a certificate from a trusted provider (.p12 / .pfx) to get signatures Acrobat validates automatically.</p>
-      <label for="p12-pwd" style="font-size:0.85rem; color:#aaa;">Certificate password (for import / backup)</label>
-      <input type="password" id="p12-pwd" autocomplete="off">
-      <div class="row-buttons">
-        <label for="p12-input" class="btn secondary">Import .p12</label>
-        <button class="secondary" id="export-id">Back up ID</button>
-        <button class="secondary" id="remove-id">Remove imported</button>
-      </div>
-
-      <div id="settings-google-wrap">
-        <h4>Google account</h4>
-        <button class="secondary" id="settings-google" style="width:100%;">Manage Google sign-in</button>
-      </div>
-
-      <div class="settings-row" style="margin-top:1rem;">
-        <p class="note">All processing happens on this device. Files only leave it when you save to Google Drive, and then they go straight to your Google account. Observer can only see files you pick or create with it. OCR downloads its engine and language data the first time you use it.</p>
-      </div>
-      <button class="secondary" style="width:100%;" data-close="settings-modal">Done</button>
     </div>
   </div>
 
@@ -686,7 +1124,25 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
     const { PDFDocument, rgb, degrees, LineCapStyle } = PDFLib;
 
-    const PEN_WIDTH = 1.6; // PDF points
+    const OBSERVER_VERSION = '2.0';
+
+    // Shared palettes: Settings offers these, the drawing bar is built from them.
+    const PEN_COLORS = [
+      ['#141311', 'Black'], ['#1f4fbf', 'Blue'], ['#b55245', 'Red'],
+      ['#2e7d4f', 'Green'], ['#6b4bb8', 'Violet'], ['#c48a16', 'Amber']
+    ];
+    const ACCENT_COLORS = [
+      ['#c6a36a', 'Brass'], ['#4a7dd1', 'Blue'], ['#4f9d69', 'Green'],
+      ['#8d6fd1', 'Violet'], ['#b55245', 'Clay'], ['#7d8794', 'Slate']
+    ];
+
+    // SHA-256 of a byte array, as lowercase hex. Needs a secure context
+    // (https or localhost); callers treat a failure as "hash unavailable".
+    async function sha256Hex(bytes) {
+      const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
 
     // ---------- State ----------
     let pdfDoc = null;          // pdf.js document (for viewing)
@@ -701,7 +1157,6 @@
     let drawingMode = false, currentStroke = null, penColor = '#141311';
     let placement = null;       // {url, aspect, x, y, w, h} in CSS px of the page
     let signed = false;         // document has a digital signature -> edits locked
-    let ocrLang = 'eng';
     let busy = false;
 
     const $ = id => document.getElementById(id);
@@ -714,24 +1169,98 @@
     const statusEl = $('status'), ocrOut = $('ocr-output'), pageInfo = $('page-info');
 
     // ---------- Settings ----------
+    // Every preference lives in localStorage under an observer-* key and is
+    // mirrored in `cfg`. setCfg() is the only writer; applyTheme() and the
+    // apply* helpers push changes into the interface straight away.
     const store = {
       get(k, d = null) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
       set(k, v) { try { localStorage.setItem(k, v); } catch {} },
       del(k) { try { localStorage.removeItem(k); } catch {} }
     };
-    const savedName = store.get('observer-name');
-    if (savedName) $('default-name').value = savedName;
-    const savedLang = store.get('observer-ocr');
-    if (savedLang) { $('ocr-lang').value = savedLang; ocrLang = savedLang; }
-    $('default-name').oninput = e => { store.set('observer-name', e.target.value); renderIdStatus(); };
-    $('ocr-lang').onchange = e => { ocrLang = e.target.value; store.set('observer-ocr', ocrLang); };
+
+    // name -> [storage key, default]. The default's type decides how it is parsed.
+    const SETTING_DEFS = {
+      theme:     ['observer-theme', 'system'],
+      accent:    ['observer-accent', '#c6a36a'],
+      fontSize:  ['observer-fontsize', 100],
+      pageNums:  ['observer-pagenums', true],
+      name:      ['observer-name', ''],
+      reason:    ['observer-reason', 'Signed with Observer'],
+      location:  ['observer-location', 'Local'],
+      contact:   ['observer-contact', ''],
+      auditPage: ['observer-auditpage', true],
+      timestamp: ['observer-timestamp', false],
+      pen:       ['observer-pen', '#141311'],
+      stroke:    ['observer-stroke', 1.6],
+      eraser:    ['observer-eraser', 18],
+      ocrLang:   ['observer-ocr', 'eng'],
+      autoOcr:   ['observer-autoocr', false],
+      viewMode:  ['observer-view', 'single'],
+      zoom:      ['observer-zoom', 1],
+      sidebar:   ['observer-sidebar', true]
+    };
+    const cfg = {};
+    function loadCfg() {
+      for (const [k, [key, def]] of Object.entries(SETTING_DEFS)) {
+        const raw = store.get(key);
+        if (raw === null) { cfg[k] = def; continue; }
+        cfg[k] = typeof def === 'boolean' ? raw === '1'
+               : typeof def === 'number' ? (Number.isFinite(+raw) ? +raw : def)
+               : raw;
+      }
+    }
+    function setCfg(k, v) {
+      const def = SETTING_DEFS[k][1];
+      cfg[k] = v;
+      store.set(SETTING_DEFS[k][0], typeof def === 'boolean' ? (v ? '1' : '0') : String(v));
+    }
+    loadCfg();
+
+    // Text drawn on the accent: whichever of ink or white has the better
+    // WCAG contrast ratio against it. A plain lightness threshold gets this
+    // wrong for mid-tone accents like brass (2.4:1 white vs 7.8:1 ink).
+    const INK_ON_ACCENT = '#141311';
+    function relLuminance(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      const lin = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+      return 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+    }
+    function readableOn(hex) {
+      const bg = relLuminance(hex);
+      const against = fg => {
+        const hi = Math.max(bg, relLuminance(fg)), lo = Math.min(bg, relLuminance(fg));
+        return (hi + 0.05) / (lo + 0.05);
+      };
+      return against('#ffffff') > against(INK_ON_ACCENT) ? '#ffffff' : INK_ON_ACCENT;
+    }
+    const systemLight = window.matchMedia('(prefers-color-scheme: light)');
+    function applyTheme() {
+      const root = document.documentElement;
+      root.dataset.theme = cfg.theme === 'system' ? (systemLight.matches ? 'light' : 'dark') : cfg.theme;
+      root.style.setProperty('--accent', cfg.accent);
+      root.style.setProperty('--accent-ink', readableOn(cfg.accent));
+      root.style.setProperty('--ui-scale', (cfg.fontSize / 100).toFixed(3));
+      document.body.classList.toggle('no-page-nums', !cfg.pageNums);
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.content = root.dataset.theme === 'light' ? '#fffdf8' : '#141311';
+    }
+    systemLight.addEventListener('change', () => { if (cfg.theme === 'system') applyTheme(); });
+    applyTheme();
 
     // ---------- UI helpers ----------
+    // The toast fades in and out and never takes pointer events, so it stays
+    // out of the way while still reporting what happened.
     function setStatus(msg, timeout = 2500) {
       statusEl.textContent = msg;
       statusEl.style.display = 'block';
       clearTimeout(statusEl._t);
-      if (timeout) statusEl._t = setTimeout(() => statusEl.style.display = 'none', timeout);
+      requestAnimationFrame(() => statusEl.classList.add('show'));
+      if (timeout) statusEl._t = setTimeout(hideStatus, timeout);
+    }
+    function hideStatus() {
+      clearTimeout(statusEl._t);
+      statusEl.classList.remove('show');
+      statusEl._t = setTimeout(() => { statusEl.style.display = 'none'; }, 220);
     }
     function closeModal(id) { $(id).classList.remove('show'); }
     function openModal(id) { $(id).classList.add('show'); }
@@ -764,7 +1293,7 @@
     $('unlock-btn').onclick = () => { signed = false; updateLock(); setStatus('Unlocked. Saving edits will invalidate the existing signature.', 4000); };
 
     // ---------- Opening files ----------
-    $('settings-btn').onclick = () => { renderIdStatus(); openModal('settings-modal'); };
+    $('settings-btn').onclick = () => { initSettingsUI(); renderIdStatus(); openModal('settings-modal'); };
     const isPdf = f => f && (/pdf/i.test(f.type) || /\.pdf$/i.test(f.name));
     const PDF_TYPES = [{ description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } }];
 
@@ -838,7 +1367,7 @@
         extraPdfs = [];
         ink = {};
         currentPage = 1;
-        zoom = 1;
+        zoom = cfg.zoom;
         signed = hasSignature(pdfBytes);
         updateLock();
         if (tempModeFrom) { viewMode = tempModeFrom; tempModeFrom = null; }
@@ -854,6 +1383,8 @@
         window.scrollTo(0, 0);
         await reloadView();
         setStatus(`Loaded ${originalName}${signed ? ' (digitally signed)' : ''}`);
+        // Auto-OCR runs after this task releases the busy lock.
+        if (cfg.autoOcr) setTimeout(() => { if (!busy) $('ocr-btn').click(); }, 300);
       }
     }
 
@@ -865,7 +1396,7 @@
     //   reflow     - the page text re-flowed for small screens
     // Each rendered page gets: canvas, search highlights, a selectable text layer and clickable links.
     const VIEW_MODES = ['single', 'continuous', 'two', 'reflow'];
-    let viewMode = VIEW_MODES.includes(store.get('observer-view')) ? store.get('observer-view') : 'single';
+    let viewMode = VIEW_MODES.includes(cfg.viewMode) ? cfg.viewMode : 'single';
     let tempModeFrom = null;      // mode to return to after Draw / Place signature
     let docVersion = 0;           // bumps whenever the document changes; invalidates caches
     let textCache = new Map();    // page -> Promise<{tc, items, str, lower, offs}>
@@ -876,6 +1407,12 @@
     function updateHeaderVar() { document.documentElement.style.setProperty('--header-h', $('app-header').offsetHeight + 'px'); }
     const pct = scale => Math.round(scale * 100 / (96 / 72)) + '%';
     const clampPage = n => Math.min(Math.max(1, Math.round(n) || 1), totalPages || 1);
+    // A small page number in the corner of a rendered page (Settings > Appearance).
+    function pageBadge(host, n) {
+      let b = host.querySelector(':scope > .page-badge');
+      if (!b) { b = document.createElement('div'); b.className = 'page-badge'; host.appendChild(b); }
+      b.textContent = n;
+    }
     function devicePx(w, h) {
       let dpr = window.devicePixelRatio || 1;
       const MAX_PX = 16e6; // iOS canvas memory limit
@@ -895,7 +1432,7 @@
       totalPages = doc.numPages;
       currentPage = clampPage(currentPage);
       await renderView();
-      if ($('drawer').classList.contains('open')) refreshDrawer();
+      if (panelShowing()) refreshDrawer();
       if (search.q) runSearch(search.q, { keepPage: true });
     }
 
@@ -913,7 +1450,7 @@
 
     function setViewMode(mode, { persist = true } = {}) {
       viewMode = mode;
-      if (persist) store.set('observer-view', mode);
+      if (persist) setCfg('viewMode', mode);
       return renderView();
     }
     // Draw and Place signature work on a single page; switch there and come back afterwards.
@@ -1057,6 +1594,7 @@
       if (renderTask === task) renderTask = null;
 
       updatePageInfo();
+      pageBadge(stack, currentPage);
       $('zoom-label').textContent = pct(viewport.scale);
       redrawInk();
       if (placement) positionOverlay();
@@ -1123,6 +1661,7 @@
         slot.append(c, hl, tl, ll);
         slot._vp = vp;
         slot._state = 'done';
+        pageBadge(slot, n);
         await renderPageLayers(page, vp, { hl, text: tl, links: ll }, n);
       } catch (e) {
         if (slot._state === 'rendering') slot._state = null;
@@ -1361,6 +1900,9 @@
 
     // ---- Side panel: thumbnails & bookmarks ----
     let thumbsVersion = -1, outlineVersion = -1, thumbObserver = null, drawerTab = 'thumbs';
+    // Visible either as an overlay (.open) or docked beside a document.
+    const panelShowing = () => $('drawer').classList.contains('open')
+      || (document.body.classList.contains('docked') && document.body.classList.contains('has-doc') && window.innerWidth >= 1000);
     function openDrawer(tab = drawerTab) {
       $('drawer').classList.add('open');
       setDrawerTab(tab);
@@ -1375,7 +1917,19 @@
     }
     function refreshDrawer() { if (drawerTab === 'thumbs') buildThumbs(); else buildOutline(); }
     const narrow = () => window.innerWidth < 900;
-    $('panel-btn').onclick = () => $('drawer').classList.contains('open') ? closeDrawer() : openDrawer();
+    // Wide screens with the sidebar setting on keep the panel docked beside the
+    // document; the button collapses and restores it. Narrow screens overlay it.
+    const canDock = () => cfg.sidebar && window.innerWidth >= 1000;
+    $('panel-btn').onclick = () => {
+      if (canDock()) {
+        const docked = document.body.classList.toggle('docked');
+        if (docked && pdfDoc) refreshDrawer();
+        updateHeaderVar();
+        renderView();
+        return;
+      }
+      $('drawer').classList.contains('open') ? closeDrawer() : openDrawer();
+    };
     $('drawer-close').onclick = closeDrawer;
     $('drawer-scrim').onclick = closeDrawer;
     document.querySelectorAll('.drawer-head .tab').forEach(b => b.onclick = () => setDrawerTab(b.dataset.tab));
@@ -1391,7 +1945,7 @@
         const b = document.createElement('button');
         b.className = 'thumb'; b.dataset.page = i;
         const img = document.createElement('div'); img.className = 'thumb-img';
-        const label = document.createElement('span'); label.textContent = i;
+        const label = document.createElement('span'); label.className = 'cap'; label.textContent = i;
         b.append(img, label);
         b.onclick = () => { goToPage(i); if (narrow()) closeDrawer(); };
         list.appendChild(b);
@@ -1423,7 +1977,7 @@
       if (!list.children.length) return;
       list.querySelectorAll('.thumb.current').forEach(t => t.classList.remove('current'));
       const t = list.querySelector(`.thumb[data-page="${currentPage}"]`);
-      if (t) { t.classList.add('current'); if (scroll && $('drawer').classList.contains('open')) t.scrollIntoView({ block: 'nearest' }); }
+      if (t) { t.classList.add('current'); if (scroll && panelShowing()) t.scrollIntoView({ block: 'nearest' }); }
     }
 
     async function buildOutline() {
@@ -1524,7 +2078,7 @@
         root.appendChild(img);
       }
       await Promise.all([...root.querySelectorAll('img')].map(img => img.decode().catch(() => {})));
-      statusEl.style.display = 'none';
+      hideStatus();
       window.print();
     });
     window.addEventListener('afterprint', () => {
@@ -1540,7 +2094,50 @@
       $('draw-btn').classList.toggle('active', on);
       $('draw-btn').textContent = on ? 'Drawing' : 'Draw';
       $('draw-bar').classList.toggle('show', on);
+      if (on) buildPenSwatches(); else setErasing(false);
       if (!on) leaveEditing();
+    }
+
+    // ---- Pen and eraser ----
+    // The swatches come from PEN_COLORS so whatever Settings picks as the
+    // default pen colour is always one of the choices here.
+    function buildPenSwatches() {
+      const host = $('pen-swatches');
+      host.textContent = '';
+      for (const [hex, label] of PEN_COLORS) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'swatch' + (hex === penColor ? ' selected' : '');
+        b.style.background = hex;
+        b.dataset.color = hex;
+        b.setAttribute('aria-label', label + ' pen');
+        b.onclick = () => { setCfg('pen', hex); penColor = hex; setErasing(false); buildPenSwatches(); };
+        host.appendChild(b);
+      }
+    }
+    let erasing = false, eraserDown = false;
+    function setErasing(on) {
+      erasing = on;
+      eraserDown = false;
+      $('erase-btn').classList.toggle('active', on);
+      $('erase-btn').textContent = on ? 'Erasing' : 'Erase';
+      drawCanvas.style.cursor = on ? 'cell' : '';
+    }
+    $('erase-btn').onclick = () => setErasing(!erasing);
+
+    // Drops any not-yet-saved stroke that passes within the eraser radius.
+    // Strokes already written into the PDF are part of the file and stay.
+    function eraseAt(x, y) {
+      const list = ink[currentPage];
+      if (!list || !list.length || !viewport) return;
+      const r = cfg.eraser / 2;
+      const keep = list.filter(st => !st.pts.some(pt => {
+        const [vx, vy] = viewport.convertToViewportPoint(pt[0], pt[1]);
+        return Math.hypot(vx - x, vy - y) <= r;
+      }));
+      if (keep.length === list.length) return;
+      ink[currentPage] = keep;
+      redrawInk();
     }
     $('draw-btn').onclick = async () => {
       if (drawingMode) { setDrawing(false); return; }
@@ -1551,10 +2148,6 @@
     };
     $('done-ink').onclick = () => setDrawing(false);
     $('undo-ink').onclick = () => { const s = ink[currentPage]; if (s && s.length) { s.pop(); redrawInk(); } };
-    document.querySelectorAll('.swatch').forEach(b => b.onclick = () => {
-      penColor = b.dataset.color;
-      document.querySelectorAll('.swatch').forEach(x => x.classList.toggle('selected', x === b));
-    });
 
     const hasInk = () => Object.values(ink).some(a => a.length);
     const cssPos = (e, el) => { const r = el.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
@@ -1586,11 +2179,13 @@
       e.preventDefault();
       drawCanvas.setPointerCapture(e.pointerId);
       const [x, y] = cssPos(e, drawCanvas);
-      currentStroke = { color: penColor, w: PEN_WIDTH, pts: [viewport.convertToPdfPoint(x, y)], last: [x, y] };
+      if (erasing) { eraserDown = true; eraseAt(x, y); return; }
+      currentStroke = { color: penColor, w: cfg.stroke, pts: [viewport.convertToPdfPoint(x, y)], last: [x, y] };
       (ink[currentPage] = ink[currentPage] || []).push(currentStroke);
       redrawInk();
     });
     drawCanvas.addEventListener('pointermove', e => {
+      if (eraserDown) { e.preventDefault(); const [ex, ey] = cssPos(e, drawCanvas); eraseAt(ex, ey); return; }
       if (!currentStroke) return;
       e.preventDefault();
       const [x, y] = cssPos(e, drawCanvas);
@@ -1602,7 +2197,7 @@
       drawCtx.stroke();
       currentStroke.last = [x, y];
     });
-    const endStroke = () => { if (currentStroke) { delete currentStroke.last; currentStroke = null; } };
+    const endStroke = () => { eraserDown = false; if (currentStroke) { delete currentStroke.last; currentStroke = null; } };
     drawCanvas.addEventListener('pointerup', endStroke);
     drawCanvas.addEventListener('pointercancel', endStroke);
 
@@ -1644,10 +2239,28 @@
     // ---------- Visual signature ----------
     $('sign-btn').onclick = () => {
       setDrawing(false);
-      const def = $('default-name').value;
-      if (def && !$('signer-name').value) $('signer-name').value = def;
+      const fill = (id, v) => { if (!$(id).value && v) $(id).value = v; };
+      fill('signer-name', cfg.name);
+      fill('sign-reason', cfg.reason);
+      fill('sign-location', cfg.location);
+      fill('sign-contact', cfg.contact);
+      // A document that is already signed can only take an incremental
+      // signature; appending a page would invalidate the existing one.
+      const already = !!pdfBytes && hasSignature(pdfBytes);
+      $('add-audit').disabled = already;
+      $('add-audit').checked = cfg.auditPage && !already;
+      $('audit-sub').textContent = already
+        ? 'Unavailable: this PDF is already signed, so no page can be added without breaking that signature'
+        : 'A summary page added before signing, so the signature covers it';
+      $('add-timestamp').checked = cfg.timestamp;
       openModal('sig-modal');
       sizeSigPad();
+    };
+    $('sig-more').onclick = () => {
+      const open = $('sig-extra').style.display === 'none';
+      $('sig-extra').style.display = open ? '' : 'none';
+      $('sig-more').classList.toggle('open', open);
+      $('sig-more').setAttribute('aria-expanded', String(open));
     };
     const sigPad = $('sig-pad'), sigCtx = sigPad.getContext('2d');
     let sigDrawing = false, sigDirty = false;
@@ -1827,7 +2440,7 @@
       if (store.get('observer-p12-imported')) {
         el.textContent = `Using imported certificate: ${store.get('observer-p12-imported-cn')} (issued by ${store.get('observer-p12-imported-issuer') || 'unknown'})`;
       } else {
-        const name = $('default-name').value.trim() || 'Observer User';
+        const name = (cfg.name || '').trim() || 'Observer User';
         const id = getIds()[name];
         el.textContent = id ? `Self-signed ID for "${name}", created ${new Date(id.created).toLocaleDateString()}`
                             : `No ID yet for "${name}". One is created the first time you digitally sign.`;
@@ -1863,7 +2476,7 @@
         const info = parseP12(b64ToU8(store.get('observer-p12-imported')), store.get('observer-p12-imported-pwd', ''));
         b64 = p12ToB64(info.key, info.cert, pwd); cn = info.cn;
       } else {
-        cn = $('default-name').value.trim() || 'Observer User';
+        cn = (cfg.name || '').trim() || 'Observer User';
         const id = getIds()[cn];
         if (!id) { setStatus('No Digital ID for this name yet'); return; }
         const info = parseP12(b64ToU8(id.p12), id.pwd);
@@ -1873,25 +2486,233 @@
       $('p12-pwd').value = '';
     };
 
+    // ---- RFC 3161 trusted timestamp (optional, best effort) ----
+    // The only part of Observer that contacts a server, and it sends a SHA-256
+    // digest, never the document. Any failure is reported and signing continues.
+    const TSA_URL = 'https://freetsa.org/tsr';
+
+    // DER TimeStampReq { version 1, messageImprint { sha256, digest }, nonce, certReq TRUE }
+    function timeStampReq(digest) {
+      const a = forge.asn1;
+      const nonce = new Uint8Array(8);
+      crypto.getRandomValues(nonce);
+      return a.toDer(a.create(a.Class.UNIVERSAL, a.Type.SEQUENCE, true, [
+        a.create(a.Class.UNIVERSAL, a.Type.INTEGER, false, a.integerToDer(1).getBytes()),
+        a.create(a.Class.UNIVERSAL, a.Type.SEQUENCE, true, [
+          a.create(a.Class.UNIVERSAL, a.Type.SEQUENCE, true, [
+            a.create(a.Class.UNIVERSAL, a.Type.OID, false, a.oidToDer(forge.pki.oids.sha256).getBytes()),
+            a.create(a.Class.UNIVERSAL, a.Type.NULL, false, '')
+          ]),
+          a.create(a.Class.UNIVERSAL, a.Type.OCTETSTRING, false, u8ToBin(digest))
+        ]),
+        // leading zero byte keeps the nonce a positive INTEGER
+        a.create(a.Class.UNIVERSAL, a.Type.INTEGER, false, '\x00' + u8ToBin(nonce)),
+        a.create(a.Class.UNIVERSAL, a.Type.BOOLEAN, false, String.fromCharCode(0xFF))
+      ])).getBytes();
+    }
+    const genTimeToIso = t => {
+      const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(t || '');
+      return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z` : null;
+    };
+    // TimeStampResp { PKIStatusInfo, TimeStampToken }; the token wraps DER TSTInfo.
+    function parseTimestampResp(der) {
+      const a = forge.asn1;
+      const resp = a.fromDer(u8ToBin(der));
+      const statusBytes = resp.value[0].value[0].value;
+      const status = statusBytes.length ? statusBytes.charCodeAt(statusBytes.length - 1) : 0;
+      if (status > 1 || !resp.value[1]) return null;   // 0 granted, 1 grantedWithMods
+      const out = { der, genTime: null, serial: null, host: new URL(TSA_URL).host };
+      try {
+        const signedData = resp.value[1].value[1].value[0];
+        const tst = a.fromDer(signedData.value[2].value[1].value[0].value);
+        out.serial = forge.util.bytesToHex(tst.value[3].value).replace(/^0+(?=.)/, '');
+        out.genTime = genTimeToIso(tst.value[4].value);
+      } catch (e) { console.warn('Timestamp token received but its details could not be read', e); }
+      return out;
+    }
+    async function requestTimestamp(bytes) {
+      try {
+        const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes.slice(0)));
+        const req = timeStampReq(digest);
+        const body = new Uint8Array(req.length);
+        for (let i = 0; i < req.length; i++) body[i] = req.charCodeAt(i) & 0xff;
+        const res = await fetch(TSA_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/timestamp-query' },
+          body
+        });
+        if (!res.ok) throw new Error('timestamp server returned HTTP ' + res.status);
+        return parseTimestampResp(toU8(await res.arrayBuffer()));
+      } catch (e) {
+        console.warn('Timestamp failed (optional):', e);
+        return null;
+      }
+    }
+
+    // ---- Audit certificate page ----
+    // Added before signing so the signature covers it. Standard fonts are
+    // WinAnsi-only, so anything outside that range is replaced rather than
+    // crashing the signature.
+    const winAnsi = t => String(t == null ? '' : t).replace(/[\r\n\t]+/g, ' ').replace(/[^\x20-\x7E\xA0-\xFF]/g, '?');
+    async function buildAuditPage(info) {
+      const W = 612, H = 792, L = 54, maxW = W - L * 2;
+      const doc = await PDFDocument.load(pdfBytes);
+      const pagesBefore = doc.getPageCount();
+      const page = doc.addPage([W, H]);
+      const font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const bold = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      const mono = await doc.embedFont(PDFLib.StandardFonts.Courier);
+      const brass = rgb(0.78, 0.64, 0.42), body = rgb(0.09, 0.09, 0.08), grey = rgb(0.45, 0.45, 0.45);
+      let y = H - 76;
+      const fit = (t, f, size) => {
+        let v = winAnsi(t);
+        while (v.length > 4 && f.widthOfTextAtSize(v, size) > maxW) v = v.slice(0, -4) + '...';
+        return v;
+      };
+      const line = (t, { size = 11, f = font, color = body, gap = 19 } = {}) => {
+        page.drawText(fit(t, f, size), { x: L, y, size, font: f, color });
+        y -= gap;
+      };
+      const rule = () => {
+        page.drawLine({ start: { x: L, y: y + 7 }, end: { x: W - L, y: y + 7 }, thickness: 0.6, color: rgb(0.84, 0.84, 0.82) });
+        y -= 14;
+      };
+
+      line('Observer Digital Signature Certificate', { size: 16, f: bold, color: brass, gap: 26 });
+      rule();
+      line('Document ID: ' + info.docId);
+      line('Signer: ' + info.name);
+      line('Signed: ' + info.signedAt.toISOString().replace(/\.\d{3}Z$/, 'Z') + ' (UTC)');
+      line('Reason: ' + info.reason);
+      line('Location: ' + info.location);
+      if (info.contact) line('Contact: ' + info.contact);
+      line('Source file: ' + info.fileName);
+      line('Pages: ' + pagesBefore + ' + this certificate page', { gap: 26 });
+      rule();
+      if (info.contentHash) {
+        line('SHA-256 of the document as it stood before this page was added:', { size: 10, f: bold, gap: 17 });
+        page.drawText(info.contentHash.slice(0, 32), { x: L, y, size: 9, font: mono, color: body }); y -= 13;
+        page.drawText(info.contentHash.slice(32), { x: L, y, size: 9, font: mono, color: body }); y -= 24;
+      } else {
+        line('SHA-256 content hash: unavailable (needs a secure https connection)', { size: 10, f: bold, gap: 24 });
+      }
+      rule();
+      line('Signature format: PKCS#7 detached (adbe.pkcs7.detached), SHA-256', { size: 9.5, gap: 16 });
+      line('Certificate: ' + info.certNote, { size: 9.5, gap: 16 });
+      if (info.tsa) {
+        line('Trusted timestamp (RFC 3161): ' + (info.tsa.genTime || 'token received') + ' from ' + info.tsa.host, { size: 9.5, gap: 15 });
+        line('Token attached to this PDF as observer-timestamp.tsr' + (info.tsa.serial ? ' (serial 0x' + info.tsa.serial + ')' : ''), { size: 9.5, gap: 16 });
+      } else if (info.wantTimestamp) {
+        line('Trusted timestamp: requested, but the timestamp server did not answer', { size: 9.5, color: grey, gap: 16 });
+      }
+      line('This page was added before signing, so it is covered by the cryptographic signature.', { size: 9.5, gap: 15 });
+      line('Any change to this document after signing breaks the signature and is detectable.', { size: 9.5, gap: 22 });
+      line(info.selfSigned
+        ? 'The certificate is self-signed, so it is not on the Adobe Approved Trust List. The'
+        : 'Validate the signer against the issuing authority in your PDF reader.', { size: 9, color: grey, gap: 13 });
+      if (info.selfSigned) line('signature proves the file is unchanged, not who the signer is, until the', { size: 9, color: grey, gap: 13 });
+      if (info.selfSigned) line('recipient chooses to trust this certificate.', { size: 9, color: grey, gap: 13 });
+      line('Generated by Observer PDF Studio ' + OBSERVER_VERSION + ' - all processing on the signer\'s device.', { size: 8.5, color: grey });
+
+      if (info.tsa && info.tsa.der) {
+        try {
+          await doc.attach(info.tsa.der, 'observer-timestamp.tsr', {
+            mimeType: 'application/timestamp-reply',
+            description: 'RFC 3161 timestamp token over the SHA-256 content hash on the certificate page',
+            creationDate: info.signedAt,
+            modificationDate: info.signedAt
+          });
+        } catch (e) { console.warn('Could not attach the timestamp token', e); }
+      }
+      return toU8(await doc.save());
+    }
+
+    function showReceipt(r) {
+      $('rc-id').textContent = r.docId;
+      $('rc-signer').textContent = r.signer;
+      $('rc-time').textContent = r.signedAt.toISOString().replace(/\.\d{3}Z$/, 'Z') + ' (UTC)';
+      $('rc-hash').textContent = r.contentHash || 'Unavailable: hashing needs a secure https connection';
+      const bits = [];
+      bits.push(r.auditAdded
+        ? 'An audit certificate page was added before signing, so the signature covers it.'
+        : 'No audit page was added, so earlier signatures in this document stay valid.');
+      if (r.tsa) bits.push(`Timestamped by ${r.tsa.host}${r.tsa.genTime ? ' at ' + r.tsa.genTime : ''}${r.auditAdded ? '; the token travels with the PDF as observer-timestamp.tsr' : ''}.`);
+      else if (r.wantTimestamp) bits.push('No timestamp was added: the server could not be reached, or it does not accept requests from a browser. The signature itself is unaffected.');
+      bits.push(r.selfSigned
+        ? 'Signed with a self-signed Digital ID, so readers show the signer as unverified until the certificate is trusted.'
+        : 'Signed with your imported certificate.');
+      $('rc-extra').textContent = bits.join(' ');
+      openModal('receipt-modal');
+    }
+    $('rc-copy').onclick = async () => {
+      try { await navigator.clipboard.writeText($('rc-hash').textContent); setStatus('Hash copied'); }
+      catch { setStatus('Could not copy — select the hash to copy it manually', 4000); }
+    };
+
     $('apply-cert').onclick = () => run('Sign', async () => {
-      const name = $('signer-name').value.trim() || $('default-name').value.trim() || 'Observer User';
+      const name = $('signer-name').value.trim() || (cfg.name || '').trim() || 'Observer User';
+      const reason = $('sign-reason').value.trim() || (cfg.reason || '').trim() || 'Signed with Observer';
+      const location = $('sign-location').value.trim() || (cfg.location || '').trim() || 'Local';
+      const contact = $('sign-contact').value.trim() || (cfg.contact || '').trim() || '';
+      const wantTimestamp = $('add-timestamp').checked;
+
       if (hasInk()) await editPdf(null);   // write pending drawings before sealing
       endPlacement();
+
+      setStatus('Preparing signature…', 0);
+      await nextFrame();
+      // Hash what is about to be signed. crypto.subtle is unavailable on
+      // insecure origins, so treat the hash as optional rather than fatal.
+      let contentHash = '';
+      try { contentHash = await sha256Hex(pdfBytes.slice(0)); }
+      catch (e) { console.warn('SHA-256 unavailable:', e); }
+
+      // An already-signed document can only take an incremental signature.
+      const alreadySigned = hasSignature(pdfBytes);
+      const wantAudit = $('add-audit').checked && !alreadySigned;
+      const docId = 'OBS-' + Date.now().toString(36).toUpperCase();
+      const signedAt = new Date();
+      const imported = !!store.get('observer-p12-imported');
+
+      let tsa = null;
+      if (wantTimestamp) {
+        setStatus('Requesting trusted timestamp…', 0);
+        tsa = await requestTimestamp(pdfBytes);
+      }
+
+      if (wantAudit) {
+        setStatus('Adding audit certificate page…', 0);
+        await nextFrame();
+        pdfBytes = await buildAuditPage({
+          docId, name, reason, location, contact, contentHash, signedAt, tsa, wantTimestamp,
+          fileName: originalName,
+          selfSigned: !imported,
+          certNote: imported
+            ? 'imported, issued by ' + (store.get('observer-p12-imported-issuer') || 'unknown issuer')
+            : 'self-signed Digital ID held on the signer\'s device'
+        });
+      }
+
       const id = await getSigningId(name);
       setStatus('Signing…', 0);
       await nextFrame();
-      const opts = { p12cert: id.p12.slice().buffer, pwd: id.pwd, reason: 'Signed with Observer', name: id.cn, location: 'Observer PDF' };
+      // zgapdfsigner's option names: signame -> /Name, contact -> /ContactInfo,
+      // signdate -> /M. Passing `name` or `contactInfo` is silently ignored.
+      const opts = { p12cert: id.p12.slice().buffer, pwd: id.pwd, reason, signame: id.cn, location, signdate: signedAt };
+      if (contact) opts.contact = contact;
       // First signature certifies the document but still allows further signatures;
       // later signatures are added as incremental updates so earlier ones stay valid.
-      if (!hasSignature(pdfBytes)) opts.permission = 2;
+      if (!alreadySigned) opts.permission = 2;
       const signer = new Zga.PdfSigner(opts);
       const out = await signer.sign(pdfBytes.slice().buffer);
       pdfBytes = toU8(out);
       signed = true;
       updateLock();
       await reloadView();
+      if (wantAudit) await goToPage(totalPages);
       closeModal('sig-modal');
       setStatus(`Digitally signed as ${id.cn}`);
+      showReceipt({ docId, signer: id.cn, signedAt, contentHash, auditAdded: wantAudit, tsa, wantTimestamp, selfSigned: !imported });
     });
 
     // ---------- OCR ----------
@@ -1909,7 +2730,7 @@
       try {
         if (!window.Tesseract) await loadScript('vendor/tesseract.min.js');
         const src = await pageCanvas(currentPage, 2);
-        const { data: { text } } = await Tesseract.recognize(src, ocrLang, {
+        const { data: { text } } = await Tesseract.recognize(src, cfg.ocrLang, {
           logger: m => { if (m.status === 'recognizing text') setStatus(`OCR ${Math.round(m.progress * 100)}%`, 0); }
         });
         ocrOut.textContent = text || '(no text found)';
@@ -2405,6 +3226,118 @@
       $('settings-google-wrap').style.display = 'none';
     }
 
+    // ---------- Settings panel ----------
+    // Each control reads its value from cfg and writes straight back through
+    // setCfg, so a change takes effect immediately and survives a reload.
+    function bindText(id, key, after) {
+      const el = $(id);
+      el.value = cfg[key];
+      el.oninput = () => { setCfg(key, el.value); if (after) after(); };
+    }
+    function bindSwitch(id, key, after) {
+      const el = $(id);
+      el.checked = !!cfg[key];
+      el.onchange = () => { setCfg(key, el.checked); if (after) after(); };
+    }
+    function bindSelect(id, key, after) {
+      const el = $(id);
+      const def = SETTING_DEFS[key][1];
+      el.value = String(cfg[key]);
+      el.onchange = () => { setCfg(key, typeof def === 'number' ? +el.value : el.value); if (after) after(); };
+    }
+    // `scale` lets a slider work in integers (reliable with step=) while the
+    // setting keeps its real unit, e.g. tenths of a point for stroke width.
+    function bindRange(id, key, outId, fmt, after, scale = 1) {
+      const el = $(id), out = $(outId);
+      const show = () => out.textContent = fmt(cfg[key]);
+      el.value = Math.round(cfg[key] * scale);
+      show();
+      el.oninput = () => { setCfg(key, +el.value / scale); show(); if (after) after(); };
+    }
+    function bindSeg(id, key, after) {
+      const host = $(id);
+      const paint = () => host.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.val === String(cfg[key])));
+      host.querySelectorAll('button').forEach(b => b.onclick = () => { setCfg(key, b.dataset.val); paint(); if (after) after(); });
+      paint();
+    }
+    function bindSwatches(id, palette, key, after) {
+      const host = $(id);
+      host.textContent = '';
+      for (const [hex, label] of palette) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'sw-dot' + (hex === cfg[key] ? ' on' : '');
+        b.style.background = hex;
+        b.title = label;
+        b.setAttribute('aria-label', label);
+        b.onclick = () => { setCfg(key, hex); bindSwatches(id, palette, key, after); if (after) after(); };
+        host.appendChild(b);
+      }
+    }
+
+    // Viewer-level settings that need the document re-laid out.
+    function applySidebar() {
+      document.body.classList.toggle('docked', cfg.sidebar);
+      if (cfg.sidebar && pdfDoc && window.innerWidth >= 1000) refreshDrawer();
+      updateHeaderVar();
+      if (pdfDoc) renderView();
+    }
+
+    function initSettingsUI() {
+      bindSeg('set-theme', 'theme', applyTheme);
+      bindSwatches('set-accent', ACCENT_COLORS, 'accent', applyTheme);
+      bindRange('set-fontsize', 'fontSize', 'fontsize-val', v => v + '%', applyTheme);
+      bindSwitch('set-pagenums', 'pageNums', applyTheme);
+
+      bindText('default-name', 'name', renderIdStatus);
+      bindText('set-reason', 'reason');
+      bindText('set-location', 'location');
+      bindText('set-contact', 'contact');
+      bindSwitch('set-auditpage', 'auditPage');
+      bindSwitch('set-timestamp', 'timestamp');
+
+      bindSwatches('set-pen', PEN_COLORS, 'pen', () => { penColor = cfg.pen; buildPenSwatches(); });
+      bindRange('set-stroke', 'stroke', 'stroke-val', v => (+v).toFixed(1) + ' pt', null, 10);
+      bindRange('set-eraser', 'eraser', 'eraser-val', v => v + ' px');
+
+      bindSelect('ocr-lang', 'ocrLang');
+      bindSwitch('set-autoocr', 'autoOcr');
+
+      bindSelect('set-viewmode', 'viewMode', () => { if (pdfDoc) setViewMode(cfg.viewMode); });
+      bindSelect('set-zoom', 'zoom', () => { if (pdfDoc) setZoom(cfg.zoom); });
+      bindSwitch('set-sidebar', 'sidebar', applySidebar);
+
+      $('about-version').textContent = 'Version ' + OBSERVER_VERSION;
+      penColor = cfg.pen;
+    }
+
+    $('reset-defaults').onclick = () => {
+      if (!confirm('Reset every setting to its default? Your Digital IDs and saved signature drawing are kept.')) return;
+      for (const [k, [key, def]] of Object.entries(SETTING_DEFS)) { store.del(key); cfg[k] = def; }
+      applyTheme();
+      initSettingsUI();
+      applySidebar();
+      renderIdStatus();
+      if (pdfDoc) { setViewMode(cfg.viewMode); setZoom(cfg.zoom); }
+      setStatus('Settings reset to defaults');
+    };
+    $('export-settings').onclick = () => {
+      const out = { app: 'Observer PDF Studio', version: OBSERVER_VERSION, exported: new Date().toISOString(), settings: {} };
+      for (const k of Object.keys(SETTING_DEFS)) out.settings[k] = cfg[k];
+      download(new TextEncoder().encode(JSON.stringify(out, null, 2)), 'observer-settings.json', 'application/json');
+      setStatus('Settings exported');
+    };
+    $('clear-data').onclick = () => {
+      if (!confirm('Clear all Observer data stored in this browser?\n\nThis removes your settings, the saved signature drawing and every Digital ID. Back up your Digital ID first if you still need it. Your PDF files are not touched.')) return;
+      try {
+        Object.keys(localStorage).filter(k => k.startsWith('observer-')).forEach(k => localStorage.removeItem(k));
+      } catch (e) { console.warn(e); }
+      setStatus('Local data cleared — reloading…', 0);
+      setTimeout(() => location.reload(), 700);
+    };
+
+    initSettingsUI();
+    applySidebar();
     updateLock();
     renderIdStatus();
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
