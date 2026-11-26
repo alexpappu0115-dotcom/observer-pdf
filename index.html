@@ -1037,10 +1037,9 @@
       <h1>Observer</h1>
       <p class="tagline">Local PDF studio &middot; nothing is uploaded</p>
       <div class="home-actions">
-        <button id="home-open"><strong>Open File</strong><small>This device, via the Files picker</small></button>
+        <button id="home-open"><strong>Open File</strong><small>This device, via the Files picker (includes iCloud Drive, On My iPhone, and any other location available there)</small></button>
         <button id="home-scan"><strong>New from Scan</strong><small>Camera or photos, turned into a PDF</small></button>
         <button id="home-gdrive"><strong>Google Drive</strong><small id="home-gdrive-hint">Sign in and browse your Drive here</small></button>
-        <button id="home-icloud"><strong>iCloud / Files</strong><small>Files picker: iCloud Drive, On My iPhone, and any cloud app installed there</small></button>
       </div>
       <div class="local-note" id="recents-note" style="display:none;">
         <span>Recents are stored locally on this device. You can turn this off anytime in Settings &rarr; Privacy.</span>
@@ -1869,7 +1868,6 @@
     dropzone.ondragleave = () => dropzone.style.background = '';
     dropzone.ondrop = e => { e.preventDefault(); dropzone.style.background = ''; if (e.dataTransfer.files[0]) openFile(e.dataTransfer.files[0]); };
     $('home-open').onclick = () => openFromFiles('open');
-    $('home-icloud').onclick = () => openFromFiles('open');
     $('home-gdrive').onclick = () => openFromDrive('open');
 
     let openMode = 'open';
