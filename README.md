@@ -4,12 +4,12 @@ Local-first PDF studio aiming to replace Adobe Acrobat and DocuSign. Everything 
 
 ## Features
 - **View & read**: sharp high-DPI rendering, zoom, and four reading modes: single page, continuous scroll, two-page spreads, and reflow (the text re-flowed for phones)
-- **Search**: full-text search across all pages with highlighted matches and next/previous (Ctrl/Cmd+F)
+- **Search**: a floating find bar over the document, searching the real pdf.js text layer across every page with highlighted matches and next/previous (Ctrl/Cmd+F). A scanned, image-only PDF is reported as such, with a prompt to run OCR
 - **Navigate**: page thumbnails, bookmarks (the PDF's outline), clickable internal and web links, tap the page number to jump to any page
 - **Select & copy text** on any page with a text layer
 - **Print** every page exactly as shown, including your drawings and signatures (Ctrl/Cmd+P)
 - **Draw** freehand annotations in black, blue or red, with undo. Strokes are written into the PDF as vector lines when you save
-- **Place signature**: draw your signature once (it's remembered), then drag and resize it anywhere on any page, including rotated pages
+- **Sign**: the Sign tool puts a draggable, resizable signature box on the page first — position and size it, confirm, and only then do the signing details open. Your drawn signature is remembered, so later signings go straight to placement. You can also sign without a visible signature
 - **Digitally sign** (PKCS#7 detached / PAdES-style, SHA-256, via zgapdfsigner)
   - Uses a persistent Digital ID kept on this device, so all your signatures share one identity
   - Records **reason, location and contact** in the signature dictionary, alongside the signer name
@@ -23,7 +23,7 @@ Local-first PDF studio aiming to replace Adobe Acrobat and DocuSign. Everything 
 - **iCloud Drive & Files**: Open uses the system file picker (iCloud Drive, On My iPhone, and any cloud app shown in Files). On iPhone/iPad, Save → "Save to Files" opens the share sheet so you can pick iCloud Drive. On desktop Chrome/Edge you can save straight back over the file you opened (works with your iCloud Drive folder on Mac/Windows)
 - **Google Drive, browsed inside Observer**: sign in with Google and the Drive button opens a real file browser — My Drive, Shared with me, Recent, folder navigation, breadcrumbs and search — and tapping a PDF opens it. Saving writes straight back to the Drive file you opened, or to a folder you choose. This is a separate flow from the local Files picker, and needs a one-time Client ID in `config.js` (see setup below)
 - **OCR** the current page (Tesseract.js, on-device), optionally the moment a file opens
-- **Home screen** with a working **Recent** list: documents you open are kept in this browser so you can reopen them, iPhone included. Turn it off or clear it in Settings → Privacy & data
+- **Home screen** with a working **Recent** list: Recents stores a local copy of recently opened PDFs on this device so you can reopen them, iPhone included. Nothing is uploaded. A one-time note says so on first use, and Settings → Privacy & data has *Store Recents locally* and *Clear all Recents*
 - **New from Scan**: photograph pages or pick images, and Observer builds a PDF from them (HEIC from an iPhone camera included)
 - **Annotate**: a Draw tool and a translucent **Highlight** tool, each with its own colour, width and opacity, plus an eraser and full **undo / redo** (Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z)
 - **Pages panel**: select pages and insert, duplicate, rotate, delete, extract to a new PDF, or add another file; reorder by dragging the grip or with the arrows

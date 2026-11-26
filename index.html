@@ -190,6 +190,14 @@
     .home-actions button strong { display: block; margin-bottom: 0.25rem; font-size: 0.95rem; color: var(--strong); }
     .home-actions button small { color: var(--dim); font-size: 0.76rem; line-height: 1.35; display: block; }
 
+    .local-note {
+      display: flex; align-items: flex-start; gap: 0.5rem;
+      background: var(--accent-tint); border: 1px solid var(--accent-line);
+      border-radius: 10px; padding: 0.6rem 0.5rem 0.6rem 0.8rem;
+      margin-bottom: 0.8rem; font-size: 0.82rem; line-height: 1.45; color: var(--text);
+    }
+    .local-note span { flex: 1; }
+    .local-note .close-x { width: 32px; height: 32px; font-size: 1rem; flex-shrink: 0; }
     .recent { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
     .recent-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
     .recent-head h4 { color: var(--dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; margin: 0; }
@@ -793,12 +801,6 @@
     .sig-hint { font-size: 0.78rem; color: var(--dim2); margin: 0 0 0.2rem; }
     .sig-fields { display: grid; gap: 0.5rem; margin: 0.6rem 0 0.2rem; }
     .sig-fields input { margin: 0; }
-    .sig-more {
-      background: transparent; color: var(--accent); padding: 0.4rem 0; font-size: 0.82rem;
-      text-align: left; min-height: 40px;
-    }
-    .sig-more::before { content: '▸ '; }
-    .sig-more.open::before { content: '▾ '; }
     .sig-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.9rem; }
     .sig-actions .wide { grid-column: 1 / -1; }
     .check-row {
@@ -905,6 +907,71 @@
     .drive-empty b { color: var(--text); }
     .drive-more { width: 100%; margin-top: 0.5rem; background: var(--elev); color: var(--text); }
 
+    /* ---- Touch targets -------------------------------------------
+       Apple's 44pt minimum. Measured on iPhone and iPad and raised
+       where it mattered: chrome, navigation, panel actions and the
+       sliders, whose hit area was only as tall as the 4pt track. */
+    .icon-btn { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    .close-x { width: 44px; height: 44px; }
+    .top-actions button { min-height: 44px; }
+    .view-bar .small-btn { min-height: 40px; padding: 0.45rem 0.8rem; }
+    .view-bar select { min-height: 40px; }
+    #zoom-label { min-height: 44px; }
+    .page-info { min-height: 44px; }
+    .seg button { min-height: 40px; }
+    .swatch-row .sw-dot { width: 40px; height: 40px; }
+    .swatch { width: 34px; height: 34px; }
+    .row-buttons > button, .row-buttons > .btn { min-height: 44px; }
+    .slideover-foot > button { min-height: 44px; }
+    .page-ops button { min-height: 44px; }
+    .sheet-btn { min-height: 48px; }
+
+    /* The visible switch stays 50x30; the input that receives the tap
+       is stretched past it so the target clears 44pt. */
+    .sw input { inset: -7px -3px; width: auto; height: auto; }
+
+    /* Range: 4pt of track, 44pt of reach. */
+    input[type="range"] { height: 44px; cursor: pointer; }
+    input[type="range"]::-webkit-slider-runnable-track { height: 4px; }
+    input[type="range"]::-webkit-slider-thumb { margin-top: -9px; }
+    .inspector .row input[type="range"] { height: 40px; }
+
+    /* Page rows: a proper grip and reorder arrows you can actually hit. */
+    .page-row { min-height: 72px; }
+    .page-row .pr-move button { width: 44px; height: 32px; }
+    .page-row .pr-grip { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+    .inspector .insp-head .close-x { width: 40px; height: 40px; }
+    .inspector .btn-row button { min-height: 44px; }
+    .recent-item .ri-drop { min-width: 40px; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+    .drive-chips button { min-height: 40px; }
+    .recent-head button { min-height: 40px; padding: 0.3rem 0.5rem; }
+
+    /* Top bar on a phone: the filename matters more than four word-labels,
+       so the secondary actions collapse to glyphs. */
+    .top-actions .i { display: none; }
+    .top-actions .i svg { width: 19px; height: 19px; display: block; }
+    @media (max-width: 620px) {
+      .top-actions .t { display: none; }
+      .top-actions .i { display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem; line-height: 1; }
+      .top-actions button { padding: 0.5rem 0.4rem; min-width: 44px; }
+      .topbar { gap: 0.1rem; }
+      /* All six tools fit without clipping "Pages". */
+      .tool-pill button { padding: 0.6rem 0.62rem; font-size: 0.78rem; }
+      .tool-pill { padding: 4px; gap: 2px; }
+      /* The view bar wrapped to two rows and cost a fifth of the screen.
+         One scrollable row instead, most-used controls first. */
+      .view-bar {
+        flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+        scrollbar-width: none; -webkit-overflow-scrolling: touch;
+        gap: 0.25rem; padding: 0 0.5rem 0.45rem;
+      }
+      .view-bar::-webkit-scrollbar { display: none; }
+      .view-bar > * { flex-shrink: 0; }
+      .view-bar .view-sep { display: none; }
+      .view-bar select { min-height: 38px; font-size: 0.78rem; }
+      .view-bar .small-btn { min-height: 38px; }
+    }
+
   </style>
 </head>
 <body>
@@ -923,10 +990,12 @@
       <button class="close-x" id="doc-close" title="Close document" aria-label="Close document">✕</button>
       <div class="filename" id="doc-name">Document</div>
       <div class="top-actions">
-        <button id="search-btn" title="Search (Ctrl+F)">Search</button>
+        <button id="search-btn" title="Search (Ctrl+F)" aria-label="Search"><span class="t">Search</span><span class="i" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+        </span></button>
         <button id="save-btn" title="Save to where this file came from">Save</button>
-        <button id="reset-btn" title="Discard unsaved changes">Reset</button>
-        <button id="share-btn" title="Export or share">Share</button>
+        <button id="reset-btn" title="Discard unsaved changes" aria-label="Reset"><span class="t">Reset</span><span class="i" aria-hidden="true">↺</span></button>
+        <button id="share-btn" title="Export or share" aria-label="Share"><span class="t">Share</span><span class="i" aria-hidden="true">↗</span></button>
         <button class="icon-btn" id="settings-btn-doc" title="Settings" aria-label="Settings">⚙</button>
       </div>
     </div>
@@ -972,6 +1041,10 @@
         <button id="home-scan"><strong>New from Scan</strong><small>Camera or photos, turned into a PDF</small></button>
         <button id="home-gdrive"><strong>Google Drive</strong><small id="home-gdrive-hint">Sign in and browse your Drive here</small></button>
         <button id="home-icloud"><strong>iCloud / Files</strong><small>Files picker: iCloud Drive, On My iPhone, and any cloud app installed there</small></button>
+      </div>
+      <div class="local-note" id="recents-note" style="display:none;">
+        <span>Recents are stored locally on this device. You can turn this off anytime in Settings &rarr; Privacy.</span>
+        <button class="close-x" id="recents-note-ok" aria-label="Dismiss">✕</button>
       </div>
       <div class="recent" id="recent-wrap">
         <div class="recent-head">
@@ -1056,11 +1129,12 @@
 
   <!-- Signature placement toolbar -->
   <div id="place-bar" class="float-bar">
-    <span class="hint">Drag to position</span>
+    <span class="hint">Drag to position · resize with − +</span>
     <button class="secondary" id="sig-smaller" aria-label="Smaller">−</button>
     <button class="secondary" id="sig-larger" aria-label="Larger">+</button>
+    <button class="secondary" id="place-redraw">Redraw</button>
     <button class="secondary" id="place-cancel">Cancel</button>
-    <button id="place-apply">Apply</button>
+    <button id="place-apply">Continue</button>
   </div>
 
   <div id="status" class="status-toast" role="status"></div>
@@ -1095,12 +1169,12 @@
     <div class="slideover-body">
       <div class="page-ops">
         <button id="op-insert" title="Insert a blank page after the selection">Insert</button>
-        <button id="op-addfile" title="Append pages from another PDF">Add file</button>
         <button id="op-rotate" title="Rotate the selected pages">Rotate</button>
         <button id="op-extract" title="Save the selected pages as a new PDF">Extract</button>
         <button id="op-duplicate" title="Duplicate the selected pages">Duplicate</button>
         <button id="op-delete" class="danger" title="Delete the selected pages">Delete</button>
       </div>
+      <button class="sheet-btn" id="op-addfile"><span class="ico">＋</span><span>Add pages from file<small>Inserts into the current document</small></span></button>
       <p class="page-sel-note" id="page-sel-note">Tap pages to select them. Drag the grip, or use the arrows, to reorder.</p>
       <div class="page-rows" id="page-rows"></div>
     </div>
@@ -1165,21 +1239,30 @@
     </div>
   </div>
 
-  <!-- Signature sheet -->
+  <!-- Signature sheet. Signing runs in two steps: place the signature on the
+       page, then fill in the signing details and seal the document. -->
   <div id="sig-modal" class="modal-overlay">
     <div class="modal">
       <div class="modal-head">
         <button class="close-x" data-close="sig-modal" aria-label="Close">✕</button>
-        <h3>Sign</h3>
+        <h3 id="sig-title">Sign</h3>
       </div>
-      <p class="sig-hint">Draw your signature once — it is remembered on this device.</p>
-      <canvas id="sig-pad"></canvas>
-      <div class="sig-fields">
-        <input type="text" id="signer-name" placeholder="Your name" autocomplete="name">
+
+      <div id="sig-draw-step">
+        <p class="sig-hint">Draw your signature once — it is remembered on this device.</p>
+        <canvas id="sig-pad"></canvas>
+        <div class="sig-actions">
+          <button class="secondary" id="clear-sig">Clear drawing</button>
+          <button id="place-on-page">Place on page</button>
+          <button class="secondary wide" id="skip-placement">Sign without a visible signature</button>
+        </div>
+        <p class="note">You position and resize the signature on the page first, then add the signing details.</p>
       </div>
-      <button type="button" class="sig-more" id="sig-more" aria-expanded="false" aria-controls="sig-extra">Signature details</button>
-      <div id="sig-extra" style="display:none;">
+
+      <div id="sig-details-step" style="display:none;">
+        <p class="sig-hint" id="sig-step-note">Add the signing details, then seal the document.</p>
         <div class="sig-fields">
+          <input type="text" id="signer-name" placeholder="Your name" autocomplete="name">
           <input type="text" id="sign-reason" placeholder="Reason (optional)">
           <input type="text" id="sign-location" placeholder="Location (optional)">
           <input type="text" id="sign-contact" placeholder="Contact / email (optional)">
@@ -1196,14 +1279,12 @@
           <span class="lbl">Request trusted timestamp (RFC 3161)<small>Sends only a hash, never the document. Many public timestamp servers refuse browser requests, so this is often skipped</small></span>
           <span class="sw"><input type="checkbox" id="add-timestamp"><i></i></span>
         </label>
+        <div class="sig-actions">
+          <button class="secondary" id="sig-back">Back</button>
+          <button id="apply-cert">Digitally sign</button>
+        </div>
+        <p class="note" id="sig-details-note">Sealing with your Digital ID (Settings → Digital ID) records a SHA-256 hash of exactly what was signed. Do it last: any later edit invalidates it.</p>
       </div>
-      <div class="sig-actions">
-        <button class="secondary" id="apply-visual">Place signature</button>
-        <button id="apply-cert">Digitally sign</button>
-        <button class="secondary wide" id="clear-sig">Clear drawing</button>
-      </div>
-      <p class="note"><b>Place signature</b> stamps your drawn signature where you choose on the page.<br>
-        <b>Digitally sign</b> seals the document with your Digital ID (Settings → Digital ID) and records a SHA-256 hash of what was signed. Do it last, because any later edit invalidates it.</p>
     </div>
   </div>
 
@@ -1480,12 +1561,13 @@
         <summary>Privacy &amp; data</summary>
         <div class="acc-body">
           <p class="note">Everything happens on this device: rendering, OCR, drawing and signing. Files only leave it when you save them somewhere yourself. The one exception is the optional RFC 3161 timestamp, which sends a hash — never the document — to a public timestamp server. If that server does not allow browser requests, Observer simply signs without it.</p>
+          <p class="note">Recents stores a local copy of recently opened PDFs on this device so you can reopen them. Nothing is uploaded.</p>
           <div class="srow">
-            <span class="lbl">Keep recent documents<small>Stores opened PDFs in this browser so Recent can reopen them, including on iPhone</small></span>
+            <span class="lbl">Store Recents locally<small>Needed to reopen files on iPhone, where a file reference cannot be kept</small></span>
             <span class="ctl"><span class="sw"><input type="checkbox" id="set-recents"><i></i></span></span>
           </div>
           <div class="row-buttons">
-            <button class="secondary" id="clear-recents">Clear recents</button>
+            <button class="secondary" id="clear-recents">Clear all Recents</button>
             <button class="secondary" id="export-settings">Export settings</button>
           </div>
           <div class="row-buttons" style="margin-top:0.5rem;">
@@ -1748,7 +1830,7 @@
     }
     function updateLock() {
       $('lock-banner').classList.toggle('show', signed);
-      ['draw-btn', 'highlight-btn', 'apply-visual', 'op-insert', 'op-addfile', 'op-rotate', 'op-duplicate', 'op-delete']
+      ['draw-btn', 'highlight-btn', 'place-on-page', 'op-insert', 'op-addfile', 'op-rotate', 'op-duplicate', 'op-delete']
         .forEach(id => $(id).classList.toggle('locked', signed));
     }
     function lockedNotice() {
@@ -2266,10 +2348,12 @@
       repaintHighlights();
       if (!search.q) { search.done = true; updateSearchCount(); return; }
       const needle = search.q.toLowerCase().replace(/\s+/g, ' ');
+      let textSeen = 0;
       for (let i = 1; i <= totalPages; i++) {
         let t;
         try { t = await getPageText(i); } catch { continue; }
         if (seq !== search.seq) return;
+        textSeen += (t.str || '').trim().length;
         let from = 0, ord = 0;
         while ((from = t.lower.indexOf(needle, from)) !== -1) {
           search.results.push({ page: i, ord: ord++, rects: rectsFor(t, from, from + needle.length) });
@@ -2278,7 +2362,15 @@
         if (i % 20 === 0) updateSearchCount();
       }
       search.done = true;
-      if (!search.results.length) { updateSearchCount(); repaintHighlights(); return; }
+      // No matches and no text at all means a scanned document: say so rather
+      // than leaving the user to wonder why nothing is ever found.
+      search.noText = textSeen < 12;
+      if (!search.results.length) {
+        updateSearchCount();
+        repaintHighlights();
+        if (search.noText) setStatus('This PDF has no text layer — it looks scanned. Run OCR to read it.', 6000);
+        return;
+      }
       let start = keepPage && prevIdx >= 0 ? Math.min(prevIdx, search.results.length - 1)
         : search.results.findIndex(r => r.page >= currentPage);
       showMatch(start < 0 ? 0 : start);
@@ -2287,7 +2379,7 @@
       const el = $('search-count');
       if (!search.q) el.textContent = '';
       else if (!search.done) el.textContent = `${search.results.length}…`;
-      else if (!search.results.length) el.textContent = 'No results';
+      else if (!search.results.length) el.textContent = search.noText ? 'No text' : 'No results';
       else el.textContent = `${search.idx + 1} / ${search.results.length}`;
     }
     async function showMatch(i) {
@@ -2825,15 +2917,15 @@
     }
 
     // ---------- Visual signature ----------
-    $('sign-btn').onclick = () => {
-      setDrawing(false);
+    // Signing is a two-step flow: position the signature on the page, then
+    // fill in the details and seal. A document that already carries a signature
+    // skips placement, because stamping it would invalidate that signature.
+    function prefillSignFields() {
       const fill = (id, v) => { if (!$(id).value && v) $(id).value = v; };
       fill('signer-name', cfg.name);
       fill('sign-reason', cfg.reason);
       fill('sign-location', cfg.location);
       fill('sign-contact', cfg.contact);
-      // A document that is already signed can only take an incremental
-      // signature; appending a page would invalidate the existing one.
       const already = !!pdfBytes && hasSignature(pdfBytes);
       $('add-audit').disabled = already;
       $('add-audit').checked = cfg.auditPage && !already;
@@ -2842,10 +2934,55 @@
         : 'A summary page added before signing, so the signature covers it';
       $('add-timestamp').checked = cfg.timestamp && !cfg.localOnly;
       $('hash-preview').style.display = cfg.showHash ? '' : 'none';
+    }
+    function showSignStep(step) {
+      const drawing = step === 'draw';
+      $('sig-draw-step').style.display = drawing ? '' : 'none';
+      $('sig-details-step').style.display = drawing ? 'none' : '';
+      $('sig-title').textContent = drawing ? 'Sign' : 'Signing details';
+      if (drawing) sizeSigPad();
+      else if (cfg.showHash) previewHash();
+    }
+    function openSignDetails(note) {
+      prefillSignFields();
+      $('sig-step-note').textContent = note || 'Signature placed. Add the signing details, then seal the document.';
+      showSignStep('details');
       openModal('sig-modal');
-      sizeSigPad();
-      if (cfg.showHash) previewHash();
-    };
+    }
+    function openSignDraw() {
+      prefillSignFields();
+      showSignStep('draw');
+      openModal('sig-modal');
+    }
+    // A saved drawing is a data URL; its aspect ratio comes from decoding it.
+    function sigFromUrl(url) {
+      return new Promise((res, rej) => {
+        const img = new Image();
+        img.onload = () => res({ url, aspect: (img.width || 1) / (img.height || 1) });
+        img.onerror = () => rej(new Error('the saved signature could not be read'));
+        img.src = url;
+      });
+    }
+    $('sign-btn').onclick = () => run('Sign', async () => {
+      if (!pdfDoc) return;
+      setDrawing(false);
+      if (signed) {
+        openSignDetails('This PDF is already signed, so no new stamp can be added. You can still add another digital signature.');
+        return;
+      }
+      const saved = store.get('observer-sig');
+      if (!saved) { openSignDraw(); return; }
+      try {
+        closeModal('sig-modal');
+        await startPlacement(await sigFromUrl(saved));
+      } catch (e) {
+        store.del('observer-sig');
+        openSignDraw();
+      }
+    });
+    $('skip-placement').onclick = () => openSignDetails('Signing without a visible signature on the page.');
+    $('sig-back').onclick = () => showSignStep('draw');
+    $('place-redraw').onclick = () => { endPlacement(); openSignDraw(); };
     // The hash of the bytes as they stand. Signing adds the audit page first,
     // so this is the hash the certificate page and the receipt will report.
     async function previewHash() {
@@ -2859,12 +2996,6 @@
         el.textContent = 'unavailable (hashing needs a secure https connection)';
       }
     }
-    $('sig-more').onclick = () => {
-      const open = $('sig-extra').style.display === 'none';
-      $('sig-extra').style.display = open ? '' : 'none';
-      $('sig-more').classList.toggle('open', open);
-      $('sig-more').setAttribute('aria-expanded', String(open));
-    };
     const sigPad = $('sig-pad'), sigCtx = sigPad.getContext('2d');
     let sigDrawing = false, sigDirty = false;
     function sizeSigPad() {
@@ -2917,7 +3048,7 @@
       return { url: c.toDataURL('image/png'), aspect: c.width / c.height };
     }
 
-    $('apply-visual').onclick = () => {
+    $('place-on-page').onclick = () => {
       if (signed) { closeModal('sig-modal'); lockedNotice(); return; }
       const sig = croppedSignature();
       if (!sig) { setStatus('Draw your signature first'); return; }
@@ -2929,12 +3060,20 @@
     async function startPlacement(sig) {
       await enterSingleForEditing();
       const w = Math.min(viewport.width * 0.4, 220), h = w / sig.aspect;
-      placement = { ...sig, w, h, x: viewport.width - w - 24, y: viewport.height - h - 40 };
+      // Drop the box into the part of the page the reader can actually see.
+      // Anchoring it to the page bottom put it off-screen on a tall page, so
+      // the box appeared somewhere the user had to go hunting for.
+      const wrapRect = wrap.getBoundingClientRect(), stackRect = stack.getBoundingClientRect();
+      const visTop = Math.max(0, wrapRect.top - stackRect.top);
+      const visBottom = Math.min(viewport.height, wrapRect.bottom - stackRect.top);
+      const y = Math.min(Math.max(visBottom - h - 28, visTop + 16), Math.max(0, viewport.height - h));
+      placement = { ...sig, w, h, x: Math.max(0, viewport.width - w - 24), y };
       sigOverlay.src = sig.url;
       sigOverlay.style.display = 'block';
       $('place-bar').classList.add('show');
       positionOverlay();
-      setStatus('Drag the signature into place, then tap Apply. You can change pages first.', 4000);
+      sigOverlay.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      setStatus('Drag the signature into place, then tap Continue. You can change pages first.', 4000);
     }
     function endPlacement() {
       const was = !!placement;
@@ -2984,7 +3123,11 @@
         const img = await doc.embedPng(url);
         doc.getPage(pageIndex).drawImage(img, { x: p0[0], y: p0[1], width: w / s, height: h / s, rotate: degrees(angle) });
       });
-      if (ok) { endPlacement(); setStatus('Signature placed'); }
+      if (ok) {
+        endPlacement();
+        setStatus('Signature placed');
+        openSignDetails();
+      }
     });
 
     // ---------- Digital ID & certified signature ----------
@@ -3356,7 +3499,8 @@
       if (!extraPdfs.length) return;
       if (signed) { lockedNotice(); return; }
       const count = extraPdfs.length;
-      showBusy('Combining…', `${count} file${count === 1 ? '' : 's'}`);
+      const before = totalPages;
+      showBusy('Adding pages…', `${count} file${count === 1 ? '' : 's'}`);
       try {
         const cur = await PDFDocument.load(pdfBytes);
         applyInk(cur, ink);
@@ -3373,7 +3517,8 @@
         await reloadView();
         markDirty();
         if ($('pages-panel').classList.contains('open')) buildPageRows();
-        setStatus(`Added ${count} file${count === 1 ? '' : 's'}`);
+        const added = totalPages - before;
+        setStatus(`Added ${added} page${added === 1 ? '' : 's'} to the current document`, 4000);
       } finally { hideBusy(); }
     }
 
@@ -4194,17 +4339,19 @@
       const list = $('recent-list');
       if (!list) return;
       if (!cfg.recents) {
-        list.innerHTML = '';
+        list.textContent = '';
         const p = document.createElement('p');
         p.className = 'recent-empty';
-        p.textContent = 'Recent documents are turned off in Settings → Privacy & data.';
+        p.textContent = 'Recents are turned off in Settings → Privacy & data.';
         list.appendChild(p);
         $('recent-clear').style.display = 'none';
+        $('recents-note').style.display = 'none';
         return;
       }
       const all = await recentAll();
       list.textContent = '';
       $('recent-clear').style.display = all.length ? '' : 'none';
+      maybeShowRecentsNote(all.length > 0);
       if (!all.length) {
         const p = document.createElement('p');
         p.className = 'recent-empty';
@@ -4241,10 +4388,19 @@
       }
     }
     $('recent-clear').onclick = async () => {
-      if (!confirm('Clear the list of recent documents from this device?')) return;
+      if (!confirm('Clear all Recents from this device?')) return;
       await recentWipe();
-      renderRecents();
-      setStatus('Recent documents cleared');
+      await renderRecents();
+      setStatus('All Recents cleared');
+    };
+    // Shown once, the first time anything is actually in Recents.
+    function maybeShowRecentsNote(any) {
+      const seen = store.get('observer-recents-noticed') === '1';
+      $('recents-note').style.display = (!seen && any && cfg.recents) ? 'flex' : 'none';
+    }
+    $('recents-note-ok').onclick = () => {
+      store.set('observer-recents-noticed', '1');
+      $('recents-note').style.display = 'none';
     };
 
     // ---------- New from Scan ----------
@@ -4715,10 +4871,10 @@
       setStatus('Settings reset to defaults');
     };
     $('clear-recents').onclick = async () => {
-      if (!confirm('Clear the list of recent documents from this device?')) return;
+      if (!confirm('Clear all Recents from this device?')) return;
       await recentWipe();
-      renderRecents();
-      setStatus('Recent documents cleared');
+      await renderRecents();
+      setStatus('All Recents cleared');
     };
     $('export-settings').onclick = () => {
       const out = { app: 'Observer PDF Studio', version: OBSERVER_VERSION, exported: new Date().toISOString(), settings: {} };
