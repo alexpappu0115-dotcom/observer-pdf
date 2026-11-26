@@ -21,8 +21,7 @@ Local-first PDF studio aiming to replace Adobe Acrobat and DocuSign. Everything 
   - Multiple signers: the first signature certifies the document while still allowing later signatures, which are added as incremental updates, so earlier signatures stay valid. Counter-signing never appends an audit page, since that would break the first signature
   - Signed documents are locked against edits that would break the signature
 - **iCloud Drive & Files**: Open uses the system file picker (iCloud Drive, On My iPhone, and any cloud app shown in Files). On iPhone/iPad, Save → "Save to Files" opens the share sheet so you can pick iCloud Drive. On desktop Chrome/Edge you can save straight back over the file you opened (works with your iCloud Drive folder on Mac/Windows)
-- **Google Drive, no sign-in needed**: works just like iCloud Drive, through your device. On iPhone/iPad the Google Drive app shows up in the Files picker and the share sheet; on Android, Drive is in the system file picker and share sheet; on Mac/Windows, Google Drive for desktop appears as a folder you can open from and save to (in Chrome/Edge, "Save over original" writes straight back to Drive). The Google Drive button shows short instructions for your device
-- **Optional direct Google sign-in**: if you add a Google OAuth Client ID to `config.js`, Observer also offers Sign in with Google, recent Drive files, the Google Picker and saving back to Drive from any browser. See setup below
+- **Google Drive, browsed inside Observer**: sign in with Google and the Drive button opens a real file browser — My Drive, Shared with me, Recent, folder navigation, breadcrumbs and search — and tapping a PDF opens it. Saving writes straight back to the Drive file you opened, or to a folder you choose. This is a separate flow from the local Files picker, and needs a one-time Client ID in `config.js` (see setup below)
 - **OCR** the current page (Tesseract.js, on-device), optionally the moment a file opens
 - **Home screen** with a working **Recent** list: documents you open are kept in this browser so you can reopen them, iPhone included. Turn it off or clear it in Settings → Privacy & data
 - **New from Scan**: photograph pages or pick images, and Observer builds a PDF from them (HEIC from an iPhone camera included)
@@ -43,26 +42,34 @@ python3 -m http.server 8000
 ```
 Then open `http://[your-ip]:8000` on the phone (same Wi-Fi). The service worker needs HTTPS or localhost, so offline mode works on GitHub Pages but not over a plain LAN IP.
 
-## Optional: direct Google sign-in setup (one time, about 5 minutes)
-Not needed for Google Drive through your device (above). Only set this up if you want Observer's own Sign in with Google.
+## Google Drive setup (one time, about 5 minutes)
+The **Google Drive** button signs you in with Google and browses your Drive inside Observer: folders, search, and tapping a PDF opens it. It is deliberately a different thing from **Open File** and **iCloud / Files**, which read what is already on the device through the system file picker. Drive never falls back to that picker.
 
-Your users never deal with keys: they tap **Sign in with Google**. But Google requires every website that offers Google sign-in or Drive access to be registered once, by the site owner. That gives you one value, the **Client ID**, which goes in `config.js`.
+Until a Client ID is configured, the Drive button says so plainly and offers to open drive.google.com in a new tab — it does not quietly open local files.
+
+Your users never deal with keys: they tap **Sign in with Google**. But Google requires every site that offers Google sign-in or Drive access to be registered once, by the site owner. That gives you one value, the **Client ID**, which goes in `config.js`.
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create a project (e.g. "Observer").
-2. **APIs & Services → Library**: enable **Google Drive API** and **Google Picker API**.
-3. **Google Auth platform → Branding**: enter the app name ("Observer") and your email. **Audience**: choose External. While the app is in Testing, add the Google accounts that will use it under Test users, or click Publish app to let anyone sign in. Observer only asks for basic profile and `drive.file`, which are non-sensitive scopes, so publishing doesn't need a security review.
+2. **APIs & Services → Library**: enable the **Google Drive API**. (No Picker API and no API key are needed — Observer lists Drive itself.)
+3. **Google Auth platform → Branding**: enter the app name ("Observer") and your email. **Audience**: choose External, then add the Google accounts that will use it under **Test users**.
 4. **Google Auth platform → Clients → Create client → Web application**. Under *Authorized JavaScript origins* add `https://alexpappu0115-dotcom.github.io` (and `http://localhost:8000` for local testing).
-5. Copy the **Client ID** (ends in `.apps.googleusercontent.com`) into `config.js` and push.
+5. Copy the **Client ID** (ends in `.apps.googleusercontent.com`) into `config.js` and push. That's the whole setup.
 
-That's it: the Drive app ID is read from the Client ID automatically. An API key is optional; only add one (step 6) if **Browse Google Drive** shows an "API developer key" error.
+### About the permissions it asks for
+Observer requests two Drive scopes:
 
-6. *(Optional)* **APIs & Services → Credentials → Create credentials → API key**. Restrict it to *Websites* `https://alexpappu0115-dotcom.github.io/*` **and** `https://docs.google.com/*` (the Picker runs on docs.google.com), and to the Google Picker API. Put it in `config.js` as `apiKey`.
+- `drive.file` — create and manage the files Observer makes. This is what saving back uses, and it is a non-sensitive scope.
+- `drive.readonly` — **read** your Drive. This is what makes in-app browsing possible at all: `drive.file` alone can only see files Observer itself created, so it cannot list your Drive.
 
-What Observer can access: your name and email (to show who's signed in), and only the Drive files you pick or create with Observer. The sign-in token lasts about an hour and is kept in memory only. Next time, "Continue as …" signs you back in with one tap. Sign out from the account button at the top.
+`drive.readonly` is a **restricted** scope. That has one practical consequence: while your OAuth app is in **Testing**, it works immediately for the accounts you listed as test users. If you ever click **Publish app**, Google will require verification and an annual security assessment before outside users can grant it. For personal use, leaving the app in Testing with yourself as a test user is the simple path.
+
+If you decline the Drive read permission at sign-in, Observer still signs you in and can still save files; the browser then tells you it cannot list your Drive and offers to ask again.
+
+What Observer can access: your name and email (to show who's signed in), and your Drive as described above. The sign-in token lasts about an hour, is kept in memory only, and is never written to disk. "Continue as …" signs you back in with one tap. Sign out from the account button, or from the Drive browser.
 
 Notes:
-- On iPhone, the Google Drive app also plugs into the Files picker and the share sheet, so you can open and save Drive files through **Files / iCloud Drive** even without this setup.
-- If you install Observer to the Home Screen on iPhone, Google's sign-in pop-up can be unreliable there. If it fails, use Observer in Safari for Google Drive, or use the Files route above.
+- On iPhone, the Google Drive app also plugs into the Files picker, so **Open File** and **iCloud / Files** can reach Drive files that way too, without any of this setup. That route is the file picker, which is why it lives on those buttons and not on the Drive one.
+- If you install Observer to the Home Screen on iPhone, Google's sign-in pop-up can be unreliable there. If it fails, use Observer in Safari for Drive sign-in.
 
 ## Notes for developers
 - Libraries are bundled in `vendor/` (no CDN needed): pdf.js 3.11.174 (Apache-2.0), pdf-lib 1.17.1 (MIT), node-forge 1.3.1 (BSD-3-Clause), zgapdfsigner 2.8.0 (MIT), tesseract.js 5.0.4 (Apache-2.0). The OCR engine core and language data are downloaded on first OCR use and then cached.

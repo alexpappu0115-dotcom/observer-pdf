@@ -875,6 +875,36 @@
     .hash-preview .hp-label { display: block; font-size: 0.74rem; color: var(--dim); margin-bottom: 0.25rem; }
     .hash-preview .hash { font-size: 0.68rem; display: block; }
 
+    /* ---- Google Drive browser ----------------------------------- */
+    .drive-top { flex-shrink: 0; padding: 0.6rem 1rem 0.2rem; border-bottom: 1px solid var(--border); }
+    .drive-top input[type="search"] { margin: 0 0 0.5rem; padding: 0.55rem 0.6rem; font-size: 0.9rem; }
+    .drive-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .drive-chips button {
+      background: var(--elev); color: var(--text);
+      font-size: 0.76rem; font-weight: 500;
+      padding: 0.35rem 0.7rem; border-radius: 999px; min-height: 36px;
+    }
+    .drive-chips button.on { background: var(--accent); color: var(--accent-ink); }
+    .drive-crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 0.1rem; margin-top: 0.4rem; font-size: 0.78rem; }
+    .drive-crumbs:empty { display: none; }
+    .drive-crumbs button { background: transparent; color: var(--accent); font-size: 0.78rem; font-weight: 500; padding: 0.25rem 0.25rem; min-height: 30px; }
+    .drive-crumbs button:disabled { color: var(--dim); }
+    .drive-crumbs .sep { color: var(--dim2); padding: 0 0.1rem; }
+    .drive-item {
+      display: flex; align-items: center; gap: 0.7rem; width: 100%;
+      padding: 0.6rem 0.5rem; border-radius: 8px; min-height: 56px;
+      background: transparent; color: var(--text); text-align: left; font-weight: 400; font-size: 0.9rem;
+    }
+    .drive-item:hover { background: var(--accent-tint); }
+    .drive-item .di-icon { width: 1.5rem; flex-shrink: 0; text-align: center; font-size: 1.05rem; }
+    .drive-item .di-main { flex: 1; min-width: 0; }
+    .drive-item .di-name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .drive-item .di-meta { display: block; font-size: 0.72rem; color: var(--dim); margin-top: 0.1rem; }
+    .drive-item .di-go { color: var(--dim2); flex-shrink: 0; }
+    .drive-empty { color: var(--dim); font-size: 0.85rem; padding: 0.9rem 0.5rem; line-height: 1.55; }
+    .drive-empty b { color: var(--text); }
+    .drive-more { width: 100%; margin-top: 0.5rem; background: var(--elev); color: var(--text); }
+
   </style>
 </head>
 <body>
@@ -938,10 +968,10 @@
       <h1>Observer</h1>
       <p class="tagline">Local PDF studio &middot; nothing is uploaded</p>
       <div class="home-actions">
-        <button id="home-open"><strong>Open File</strong><small>From this device or any cloud app in Files</small></button>
+        <button id="home-open"><strong>Open File</strong><small>This device, via the Files picker</small></button>
         <button id="home-scan"><strong>New from Scan</strong><small>Camera or photos, turned into a PDF</small></button>
-        <button id="home-gdrive"><strong>Google Drive</strong><small id="home-gdrive-hint">Open a PDF from Drive</small></button>
-        <button id="home-icloud"><strong>iCloud / Files</strong><small>Apple ecosystem and On My iPhone</small></button>
+        <button id="home-gdrive"><strong>Google Drive</strong><small id="home-gdrive-hint">Sign in and browse your Drive here</small></button>
+        <button id="home-icloud"><strong>iCloud / Files</strong><small>Files picker: iCloud Drive, On My iPhone, and any cloud app installed there</small></button>
       </div>
       <div class="recent" id="recent-wrap">
         <div class="recent-head">
@@ -1080,19 +1110,43 @@
     </div>
   </aside>
 
-  <!-- Google Drive through the device (no sign-in needed) -->
-  <div id="gdrive-help-modal" class="modal-overlay">
+  <!-- Google Drive browser. Lists Drive through the API and opens a PDF straight
+       into Observer; it never touches the device's file picker. -->
+  <aside id="drive-panel" class="slideover" aria-label="Google Drive">
+    <div class="slideover-head">
+      <button class="close-x" data-closepanel="drive-panel" aria-label="Close Google Drive">✕</button>
+      <div class="slideover-title" id="drive-title">Google Drive</div>
+      <button class="icon-btn" id="drive-refresh" title="Refresh" aria-label="Refresh">⟳</button>
+    </div>
+    <div class="drive-top">
+      <input type="search" id="drive-search" placeholder="Search your Drive" autocomplete="off" enterkeyhint="search" aria-label="Search Google Drive">
+      <div class="drive-chips" id="drive-chips" role="group" aria-label="Where to look">
+        <button type="button" data-root="my">My Drive</button>
+        <button type="button" data-root="shared">Shared with me</button>
+        <button type="button" data-root="recent">Recent</button>
+      </div>
+      <div class="drive-crumbs" id="drive-crumbs"></div>
+    </div>
+    <div class="slideover-body" id="drive-list"></div>
+    <div class="slideover-foot">
+      <button class="secondary" id="drive-signout">Sign out</button>
+      <button id="drive-choose" style="display:none;">Save here</button>
+    </div>
+  </aside>
+
+  <!-- Shown when the site has no Google Client ID: Drive still must not fall
+       back to the local file picker, so offer the web route instead. -->
+  <div id="drive-setup-modal" class="modal-overlay">
     <div class="modal">
       <div class="modal-head">
-        <button class="close-x" data-close="gdrive-help-modal" aria-label="Close">✕</button>
-        <h3 id="gh-title">Open from Google Drive</h3>
+        <button class="close-x" data-close="drive-setup-modal" aria-label="Close">✕</button>
+        <h3>Google Drive sign-in isn't set up</h3>
       </div>
-      <ol id="gh-steps" class="steps"></ol>
-      <label class="check"><input type="checkbox" id="gh-skip"> Don't show this again</label>
-      <div class="row-buttons">
-        <button class="secondary" data-close="gdrive-help-modal">Cancel</button>
-        <button id="gh-go">Choose from Google Drive</button>
-      </div>
+      <p class="note">Opening files straight from Google Drive needs Observer to be registered with Google once, by whoever runs this site. Until that is done, Observer cannot sign you in or list your Drive.</p>
+      <p class="note"><b>To enable it:</b> create an OAuth Client ID in the Google Cloud console and paste it into <code>config.js</code>. The README has the five-minute walkthrough.</p>
+      <button class="sheet-btn" id="drive-open-web"><span class="ico">↗</span><span>Open Google Drive in a new tab<small>Download the PDF there, then come back and use Open File</small></span></button>
+      <p class="note">This is not the same as <b>Open File</b> or <b>iCloud / Files</b>, which read files already on this device.</p>
+      <button class="secondary" style="width:100%; margin-top:0.4rem;" data-close="drive-setup-modal">Close</button>
     </div>
   </div>
 
@@ -1161,7 +1215,7 @@
         <h3 id="open-title">Open a PDF</h3>
       </div>
       <button class="sheet-btn" id="open-files"><span class="ico">📁</span><span>Files / iCloud Drive<small>Your device, iCloud Drive, and any cloud app shown in Files</small></span></button>
-      <button class="sheet-btn" id="open-gdrive"><span class="ico">△</span><span>Google Drive<small id="open-gdrive-hint">Sign in with Google and pick a file</small></span></button>
+      <button class="sheet-btn" id="open-gdrive"><span class="ico">△</span><span>Google Drive<small id="open-gdrive-hint">Sign in and browse your Drive here</small></span></button>
       <p class="note">Dropbox, OneDrive and Box work the same way through Files when their apps are installed.</p>
       <button class="secondary" style="width:100%;" data-close="open-modal">Cancel</button>
     </div>
@@ -1214,7 +1268,7 @@
       <div id="g-drive" style="display:none;">
         <h4>Recent in Google Drive</h4>
         <div id="g-recent" class="g-list"></div>
-        <button class="sheet-btn" id="g-browse"><span class="ico">△</span><span>Browse Google Drive…<small>Pick any PDF in your Drive</small></span></button>
+        <button class="sheet-btn primary" id="g-browse"><span class="ico">△</span><span>Browse my Drive<small>Folders and PDFs, listed inside Observer</small></span></button>
       </div>
       <p class="note" id="g-note"></p>
       <div class="row-buttons" style="margin-top:0.6rem;">
@@ -1304,7 +1358,7 @@
             <span class="lbl">Google Drive<small id="gdrive-state">Not connected</small></span>
             <span class="ctl"><button id="settings-google">Connect</button></span>
           </div>
-          <p class="note">Connecting is optional and entirely separate from iCloud. Observer only ever sees the Drive files you pick or create with it, and the sign-in token is kept in memory, never stored.</p>
+          <p class="note">Connecting is optional and entirely separate from iCloud / Files, which reads this device. Signing in asks Google for permission to <b>read</b> your Drive, so Observer can list and open your PDFs here, and to <b>create</b> files, so it can save back. Observer never uploads anything on its own, and the sign-in token is kept in memory, never written to disk.</p>
           <div class="srow">
             <span class="lbl">iCloud Drive / Files<small>Through the system file picker and share sheet</small></span>
             <span class="ctl"><span style="font-size:0.8rem;color:var(--dim);">Always available</span></span>
@@ -3460,18 +3514,23 @@
         savedOk(`Saved to Google Drive${parentId ? '' : ' (My Drive)'}: ${f.name}`);
       });
     };
+    // Folder choosing uses the same in-app browser, in folders-only mode.
     $('save-gdrive-folder').onclick = () => {
       const token = driveToken(); if (!token) return;
       const name = outName();
       run('Save', async () => {
         await token;
-        const [folder] = await pickDrive({ folder: true });
-        if (!folder) return;
-        setStatus('Saving to Google Drive…', 0);
-        const f = await driveCreate(pdfBytes, name, folder.id);
-        source = { type: 'drive', id: f.id, name: f.name, parentId: folder.id };
-        originalName = f.name;
-        savedOk(`Saved to ${folder.name}: ${f.name}`);
+        if (!G.canBrowse) { setStatus('Allow Drive access to choose a folder, or use My Drive', 5000); return; }
+        closeModal('save-modal');
+        drive.onFolder = folder => run('Save', async () => {
+          setStatus('Saving to Google Drive…', 0);
+          const f = await driveCreate(await exportBytes(), name, folder.id === 'root' ? null : folder.id);
+          source = { type: 'drive', id: f.id, name: f.name, parentId: folder.id };
+          originalName = f.name;
+          markClean();
+          setStatus(`Saved to ${folder.name}: ${f.name}`, 3500);
+        });
+        openDriveBrowser('folder');
       });
     };
 
@@ -3482,28 +3541,27 @@
     // The access token lives in memory only; the remembered account (name/email) is in localStorage.
     const GCFG = (window.OBSERVER_CONFIG && window.OBSERVER_CONFIG.google) || {};
     const GCLIENT = String(GCFG.clientId || '').trim();
-    const GAPP_ID = String(GCFG.appId || (GCLIENT.match(/^(\d+)-/) || [])[1] || '');
     const driveConfigured = /\.apps\.googleusercontent\.com$/.test(GCLIENT);
+    // drive.file alone only ever sees files Observer itself created, which is
+    // enough to save but cannot list a Drive. Browsing needs read access, so
+    // both are requested; if the user declines the read scope, saving still works.
     const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-    const SIGNIN_SCOPES = `openid email profile ${DRIVE_SCOPE}`;
+    const DRIVE_BROWSE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
+    const SIGNIN_SCOPES = `openid email profile ${DRIVE_SCOPE} ${DRIVE_BROWSE_SCOPE}`;
     const DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
     const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
-    const NOT_SET_UP = 'Google sign-in isn\'t set up yet: add your Google Client ID to config.js (see README).';
-    const G = { client: null, token: null, exp: 0, loading: null, onToken: null, onError: null, user: null };
+    const G = { client: null, token: null, exp: 0, loading: null, onToken: null, onError: null, user: null, canBrowse: false };
     try { G.user = JSON.parse(store.get('observer-google-user') || 'null'); } catch {}
     const signedIn = () => !!(G.token && Date.now() < G.exp - 60000);
 
+    // Only Google Identity Services is needed now: browsing is done in-app
+    // through the Drive API, so there is no Picker and no API key to set up.
     function gPreload() {
       if (!G.loading) {
         G.loading = (async () => {
-          await Promise.all([
-            window.google && google.accounts && google.accounts.oauth2 ? null : loadScript('https://accounts.google.com/gsi/client'),
-            window.gapi ? null : loadScript('https://apis.google.com/js/api.js')
-          ]);
-          await new Promise((res, rej) => gapi.load('picker', {
-            callback: res, onerror: () => rej(new Error('Google Picker failed to load')),
-            timeout: 15000, ontimeout: () => rej(new Error('Google Picker timed out'))
-          }));
+          if (!(window.google && google.accounts && google.accounts.oauth2)) {
+            await loadScript('https://accounts.google.com/gsi/client');
+          }
           G.client = google.accounts.oauth2.initTokenClient({
             client_id: GCLIENT,
             scope: SIGNIN_SCOPES,
@@ -3526,21 +3584,22 @@
     // Signs in if needed and returns a promise for an access token, or null if Google can't be
     // used yet. Call it synchronously from a tap: it may open Google's sign-in popup. Returning
     // users get a one-tap popup that closes itself, because we pass their email as a hint.
-    function driveToken() {
-      if (!driveConfigured) { setStatus(NOT_SET_UP, 6000); return null; }
+    function driveToken(force = false) {
+      if (!driveConfigured) { showDriveSetup(); return null; }
       if (!G.client) {
         setStatus('Connecting to Google…', 0);
         gPreload().then(() => setStatus('Connected to Google. Tap again to continue.', 4000),
                         e => setStatus('Could not reach Google: ' + e.message, 5000));
         return null;
       }
-      if (signedIn()) return Promise.resolve(G.token);
+      if (signedIn() && !force) return Promise.resolve(G.token);
       const p = new Promise((resolve, reject) => {
         G.onToken = r => {
           if (r.error) return reject(new Error(r.error_description || r.error));
           if (!google.accounts.oauth2.hasGrantedAllScopes(r, DRIVE_SCOPE)) {
             return reject(new Error('Google Drive access wasn\'t allowed. Sign in again and tick the Google Drive box'));
           }
+          G.canBrowse = google.accounts.oauth2.hasGrantedAllScopes(r, DRIVE_BROWSE_SCOPE);
           G.token = r.access_token;
           G.exp = Date.now() + (Number(r.expires_in) || 3600) * 1000;
           loadProfile().finally(() => { renderAccount(); resolve(G.token); });
@@ -3549,35 +3608,12 @@
           e && e.type === 'popup_closed' ? 'Google sign-in was closed'
           : e && e.type === 'popup_failed_to_open' ? 'allow pop-ups for this site to sign in with Google'
           : 'Google sign-in failed'));
-        const opts = { prompt: '' };
+        const opts = { prompt: force ? 'consent' : '' };
         if (G.user && G.user.email) opts.hint = G.user.email;
         G.client.requestAccessToken(opts);
       });
       p.catch(() => {});
       return p;
-    }
-
-    function pickDrive({ multi = false, folder = false } = {}) {
-      return new Promise(resolve => {
-        const P = google.picker;
-        const view = folder
-          ? new P.DocsView(P.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true).setMimeTypes('application/vnd.google-apps.folder')
-          : new P.DocsView(P.ViewId.DOCS).setIncludeFolders(true).setMimeTypes('application/pdf');
-        const builder = new P.PickerBuilder()
-          .addView(view)
-          .setOAuthToken(G.token)
-          .setTitle(folder ? 'Choose a folder' : multi ? 'Choose PDFs' : 'Choose a PDF')
-          .enableFeature(P.Feature.SUPPORT_DRIVES)
-          .setCallback(d => {
-            const action = d[P.Response.ACTION];
-            if (action === P.Action.PICKED) resolve(d[P.Response.DOCUMENTS].map(x => ({ id: x[P.Document.ID], name: x[P.Document.NAME], parentId: x[P.Document.PARENT_ID] || null })));
-            else if (action === P.Action.CANCEL) resolve([]);
-          });
-        if (GCFG.apiKey) builder.setDeveloperKey(GCFG.apiKey);
-        if (GAPP_ID) builder.setAppId(GAPP_ID);
-        if (multi) builder.enableFeature(P.Feature.MULTISELECT_ENABLED);
-        builder.build().setVisible(true);
-      });
     }
 
     async function driveFetch(url, opts = {}) {
@@ -3618,7 +3654,7 @@
     // ---- Account / Drive sheet ----
     let gMode = 'account';  // 'open' | 'add' | 'account'
     function showGoogleSheet(mode = 'account') {
-      if (!driveConfigured) { setStatus(NOT_SET_UP, 6000); return; }
+      if (!driveConfigured) { showDriveSetup(); return; }
       gMode = mode;
       $('g-title').textContent = mode === 'add' ? 'Add from Google Drive' : mode === 'open' ? 'Open from Google Drive' : 'Google account';
       renderAccount();
@@ -3626,10 +3662,13 @@
       gPreload().catch(e => setStatus('Could not reach Google: ' + e.message, 5000));
       if (signedIn()) loadRecent();
     }
+    // The Google Drive button is its own flow end to end. It never falls back
+    // to the device file picker, which is what Open File / iCloud-Files do.
     function openFromDrive(mode) {
-      if (driveConfigured) { showGoogleSheet(mode); return; }
-      if (store.get('observer-gdrive-help-skip') === '1') { openFromFiles(mode); return; }
-      showDriveHelp(mode);
+      if (!driveConfigured) { showDriveSetup(); return; }
+      gMode = mode;
+      if (signedIn() && G.canBrowse) { openDriveBrowser(mode); return; }
+      showGoogleSheet(mode);
     }
     $('account-btn').onclick = () => showGoogleSheet('account');
 
@@ -3667,8 +3706,10 @@
       $('g-drive').style.display = signedIn() ? 'block' : 'none';
       $('g-signout').style.display = G.user || signedIn() ? 'block' : 'none';
       $('g-note').textContent = signedIn()
-        ? 'Observer can only see PDFs you pick or save with it.'
-        : 'Signing in lets you open and save PDFs in your Google Drive. Observer only gets access to files you pick or create with it.';
+        ? (G.canBrowse
+            ? 'Observer can read your Drive to list and open PDFs, and save files back. Nothing is uploaded unless you save it.'
+            : 'Signed in, but Drive read access was not granted, so your files cannot be listed. Tap Browse to ask again.')
+        : 'Signing in lets Observer browse the PDFs in your Google Drive and open one here, and save files back to Drive.';
     }
 
     async function loadRecent() {
@@ -3691,6 +3732,7 @@
     // Call inside run()
     async function openDriveDocs(docs) {
       closeModal('google-modal');
+      closePanel('drive-panel');
       setStatus('Downloading from Google Drive…', 0);
       const files = [], srcs = [];
       for (const d of docs) {
@@ -3707,32 +3749,302 @@
         await t;
         renderAccount();
         setStatus(`Signed in${G.user ? ' as ' + G.user.name : ''}`);
-        await loadRecent();
+        if (gMode === 'open' || gMode === 'add') {
+          closeModal('google-modal');
+          openDriveBrowser(gMode);
+        } else {
+          await loadRecent();
+        }
       });
     };
     $('g-browse').onclick = () => {
-      const t = driveToken(); if (!t) return;
-      run('Google Drive', async () => {
-        await t;
-        closeModal('google-modal');
-        const docs = await pickDrive({ multi: gMode === 'add' });
-        if (docs.length) await openDriveDocs(docs);
-      });
+      if (!signedIn()) { const t = driveToken(); if (t) run('Sign in', async () => { await t; renderAccount(); closeModal('google-modal'); openDriveBrowser(gMode === 'account' ? 'open' : gMode); }); return; }
+      closeModal('google-modal');
+      openDriveBrowser(gMode === 'account' ? 'open' : gMode);
     };
-    $('g-signout').onclick = () => {
+    function googleSignOut() {
       if (G.token && window.google && google.accounts) google.accounts.oauth2.revoke(G.token, () => {});
-      G.token = null; G.exp = 0; G.user = null;
+      G.token = null; G.exp = 0; G.user = null; G.canBrowse = false;
       store.del('observer-google-user');
       renderAccount();
       closeModal('google-modal');
       setStatus('Signed out of Google');
-    };
+    }
+    $('g-signout').onclick = googleSignOut;
     $('settings-google').onclick = () => {
       closePanel('settings-panel');
       if (driveConfigured) showGoogleSheet('account');
-      else showDriveHelp('open');
+      else showDriveSetup();
     };
     renderAccount();
+    // ---------- In-app Google Drive browser ----------
+    // Lists Drive through the API and opens a PDF straight into Observer.
+    // This is deliberately separate from Open File / iCloud-Files, which read
+    // what is already on the device; nothing here ever opens the file picker.
+    const drive = {
+      mode: 'open',      // 'open' | 'add' | 'folder'
+      root: 'my',        // 'my' | 'shared' | 'recent'
+      path: [],          // folders walked into, [{id, name}]
+      query: '',
+      next: null,
+      busy: false,
+      seq: 0,
+      onFolder: null
+    };
+    const text = t => document.createTextNode(t);
+    // Drive query strings are single-quoted, so quotes and backslashes escape.
+    const dq = t => String(t).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+    function driveListQuery() {
+      const kinds = drive.mode === 'folder'
+        ? "mimeType = 'application/vnd.google-apps.folder'"
+        : "(mimeType = 'application/vnd.google-apps.folder' or mimeType = 'application/pdf')";
+      const parts = ['trashed = false'];
+      if (drive.query) {
+        parts.push(`name contains '${dq(drive.query)}'`, kinds);
+      } else if (drive.root === 'shared' && !drive.path.length) {
+        parts.push('sharedWithMe = true', kinds);
+      } else if (drive.root === 'recent' && !drive.path.length) {
+        parts.push("mimeType = 'application/pdf'");
+      } else {
+        const parent = drive.path.length ? drive.path[drive.path.length - 1].id : 'root';
+        parts.push(`'${dq(parent)}' in parents`, kinds);
+      }
+      return parts.join(' and ');
+    }
+
+    async function driveList(pageToken) {
+      const recent = drive.root === 'recent' && !drive.path.length && !drive.query;
+      const params = new URLSearchParams({
+        q: driveListQuery(),
+        orderBy: recent ? 'viewedByMeTime desc' : 'folder,name',
+        pageSize: '100',
+        spaces: 'drive',
+        supportsAllDrives: 'true',
+        includeItemsFromAllDrives: 'true',
+        fields: 'nextPageToken, files(id,name,mimeType,modifiedTime,size,parents)'
+      });
+      if (pageToken) params.set('pageToken', pageToken);
+      const res = await driveFetch(`${DRIVE_API}?${params}`);
+      return res.json();
+    }
+
+    const isFolder = f => f.mimeType === 'application/vnd.google-apps.folder';
+
+    function driveCrumbs() {
+      const host = $('drive-crumbs');
+      host.textContent = '';
+      if (drive.query) return;
+      const rootName = { my: 'My Drive', shared: 'Shared with me', recent: 'Recent' }[drive.root];
+      const hop = (label, idx) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = label;
+        b.disabled = idx === drive.path.length - 1;
+        b.onclick = () => { drive.path = drive.path.slice(0, idx + 1); loadDriveList(); };
+        return b;
+      };
+      const root = document.createElement('button');
+      root.type = 'button';
+      root.textContent = rootName;
+      root.disabled = !drive.path.length;
+      root.onclick = () => { drive.path = []; loadDriveList(); };
+      host.appendChild(root);
+      drive.path.forEach((f, i) => {
+        const sep = document.createElement('span');
+        sep.className = 'sep';
+        sep.textContent = '›';
+        host.append(sep, hop(f.name, i));
+      });
+    }
+
+    function driveMsg(html) {
+      const list = $('drive-list');
+      list.textContent = '';
+      const p = document.createElement('p');
+      p.className = 'drive-empty';
+      p.append(...html);
+      list.appendChild(p);
+    }
+
+    function driveRow(f) {
+      const folder = isFolder(f);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'drive-item';
+      b.dataset.kind = folder ? 'folder' : 'pdf';
+      b.dataset.id = f.id;
+
+      const ico = document.createElement('span');
+      ico.className = 'di-icon';
+      ico.textContent = folder ? '📁' : '📄';
+
+      const main = document.createElement('span');
+      main.className = 'di-main';
+      const nm = document.createElement('span');
+      nm.className = 'di-name';
+      nm.textContent = f.name;
+      const meta = document.createElement('span');
+      meta.className = 'di-meta';
+      const bits = [];
+      if (!folder && f.size) bits.push(prettySize(+f.size));
+      if (f.modifiedTime) bits.push(prettyWhen(new Date(f.modifiedTime).getTime()));
+      meta.textContent = folder ? 'Folder' : bits.join(' · ');
+      main.append(nm, meta);
+      b.append(ico, main);
+
+      if (folder) {
+        const go = document.createElement('span');
+        go.className = 'di-go';
+        go.textContent = '›';
+        b.appendChild(go);
+        b.onclick = () => {
+          drive.path.push({ id: f.id, name: f.name });
+          drive.query = '';
+          $('drive-search').value = '';
+          loadDriveList();
+        };
+      } else {
+        b.onclick = () => run('Google Drive', () => openDriveDocs([{ id: f.id, name: f.name, parentId: (f.parents || [])[0] || null }]));
+      }
+      return b;
+    }
+
+    async function loadDriveList(pageToken) {
+      if (!signedIn()) { showDriveAccess(); return; }
+      if (!G.canBrowse) { showNeedsBrowseScope(); return; }
+      const seq = ++drive.seq;
+      const list = $('drive-list');
+      if (!pageToken) { list.textContent = ''; driveMsg([text('Loading…')]); }
+      driveCrumbs();
+      drive.busy = true;
+      try {
+        const data = await driveList(pageToken);
+        if (seq !== drive.seq) return;
+        const files = data.files || [];
+        drive.next = data.nextPageToken || null;
+        if (!pageToken) list.textContent = '';
+        list.querySelectorAll('.drive-more').forEach(b => b.remove());
+        if (!files.length && !pageToken) {
+          driveMsg([text(drive.query
+            ? `Nothing in your Drive matches “${drive.query}”.`
+            : drive.mode === 'folder'
+              ? 'No folders here. "Save here" puts the file in this folder.'
+              : 'No PDFs or folders here.')]);
+          return;
+        }
+        for (const f of files) list.appendChild(driveRow(f));
+        if (drive.next) {
+          const more = document.createElement('button');
+          more.className = 'drive-more secondary';
+          more.textContent = 'Show more';
+          more.onclick = () => { more.disabled = true; more.textContent = 'Loading…'; loadDriveList(drive.next); };
+          list.appendChild(more);
+        }
+      } catch (e) {
+        if (seq !== drive.seq) return;
+        driveMsg([text('Could not list your Drive: ' + e.message)]);
+      } finally {
+        drive.busy = false;
+      }
+    }
+
+    function showDriveAccess() {
+      const b = document.createElement('button');
+      b.textContent = 'Sign in with Google';
+      b.style.marginTop = '0.7rem';
+      b.onclick = () => startDriveSignIn();
+      const list = $('drive-list');
+      list.textContent = '';
+      const p = document.createElement('p');
+      p.className = 'drive-empty';
+      p.textContent = 'Sign in with your Google account to browse the PDFs in your Drive.';
+      list.append(p, b);
+    }
+    function showNeedsBrowseScope() {
+      const b = document.createElement('button');
+      b.textContent = 'Allow Drive access';
+      b.style.marginTop = '0.7rem';
+      b.onclick = () => startDriveSignIn(true);
+      const list = $('drive-list');
+      list.textContent = '';
+      const p = document.createElement('p');
+      p.className = 'drive-empty';
+      p.textContent = 'Observer can sign you in, but it was not allowed to see your Drive, so it cannot list your files. Sign in again and leave the Google Drive permission ticked.';
+      list.append(p, b);
+    }
+
+    // Must be called straight from a tap: it may open Google's sign-in popup.
+    function startDriveSignIn(force = false) {
+      const t = driveToken(force);
+      if (!t) return;
+      run('Sign in', async () => {
+        await t;
+        renderAccount();
+        setStatus(`Signed in${G.user ? ' as ' + G.user.name : ''}`);
+        loadDriveList();
+      });
+    }
+
+    function openDriveBrowser(mode = 'open') {
+      drive.mode = mode;
+      drive.root = 'my';
+      drive.path = [];
+      drive.query = '';
+      drive.next = null;
+      $('drive-search').value = '';
+      $('drive-title').textContent = mode === 'folder' ? 'Choose a Drive folder'
+        : mode === 'add' ? 'Add from Google Drive' : 'Open from Google Drive';
+      $('drive-choose').style.display = mode === 'folder' ? '' : 'none';
+      $('drive-search').style.display = mode === 'folder' ? 'none' : '';
+      $('drive-chips').style.display = mode === 'folder' ? 'none' : '';
+      paintDriveChips();
+      openPanel('drive-panel');
+      loadDriveList();
+    }
+
+    function paintDriveChips() {
+      $('drive-chips').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.root === drive.root));
+    }
+    $('drive-chips').querySelectorAll('button').forEach(b => {
+      b.onclick = () => {
+        drive.root = b.dataset.root;
+        drive.path = [];
+        drive.query = '';
+        $('drive-search').value = '';
+        paintDriveChips();
+        loadDriveList();
+      };
+    });
+    let driveSearchT;
+    $('drive-search').oninput = e => {
+      clearTimeout(driveSearchT);
+      const v = e.target.value.trim();
+      driveSearchT = setTimeout(() => {
+        drive.query = v;
+        drive.path = [];
+        loadDriveList();
+      }, 350);
+    };
+    $('drive-refresh').onclick = () => loadDriveList();
+    $('drive-signout').onclick = () => { closePanel('drive-panel'); googleSignOut(); };
+    $('drive-choose').onclick = () => {
+      const folder = drive.path.length ? drive.path[drive.path.length - 1] : { id: 'root', name: 'My Drive' };
+      closePanel('drive-panel');
+      if (drive.onFolder) drive.onFolder(folder);
+    };
+
+    // The web route, for when this site has no Client ID. Deliberately not the
+    // device file picker: that is what Open File and iCloud / Files are for.
+    function showDriveSetup() {
+      openModal('drive-setup-modal');
+    }
+    $('drive-open-web').onclick = () => {
+      window.open('https://drive.google.com', '_blank', 'noopener');
+      closeModal('drive-setup-modal');
+      setStatus('Download the PDF in Google Drive, then use Open File to bring it in', 6000);
+    };
+
     // ---- Google Drive through the device (works like iCloud Drive; no Google sign-in needed) ----
     // iPhone/iPad: the Google Drive app appears in the Files picker and the share sheet.
     // Android: Drive is a source in the system file picker and a share target.
@@ -3745,56 +4057,19 @@
       if (/Macintosh/.test(ua)) return 'mac';
       return 'other';
     })();
-    function gdriveOpenSteps() {
-      switch (PLATFORM) {
-        case 'ios': return [
-          'Tap <b>Choose from Google Drive</b>.',
-          'In the Files window, tap <b>Browse</b>, then <b>Google Drive</b>, and pick your PDF.',
-          'Don\'t see Google Drive? Install the free Google Drive app, then in Files tap <b>Browse → ⋯ → Edit</b> and turn on Google Drive.'];
-        case 'android': return [
-          'Tap <b>Choose from Google Drive</b>.',
-          'In the file picker, open the menu (☰) and choose <b>Drive</b>, then pick your PDF.',
-          'Drive comes with most Android phones. If it\'s missing, install the Google Drive app.'];
-        case 'windows': return [
-          'Tap <b>Choose from Google Drive</b>.',
-          'In the file window, open the <b>Google Drive</b> drive (usually G:) and pick your PDF.',
-          'This needs <b>Google Drive for desktop</b>. In Chrome or Edge, “Save over original” then saves straight back to Drive.'];
-        case 'mac': return [
-          'Tap <b>Choose from Google Drive</b>.',
-          'In the file window, choose <b>Google Drive</b> in the sidebar under Locations and pick your PDF.',
-          'This needs <b>Google Drive for desktop</b>. In Chrome or Edge, “Save over original” then saves straight back to Drive.'];
-        default: return [
-          'Tap <b>Choose from Google Drive</b> and pick the PDF from your Google Drive folder (Google Drive for desktop).',
-          'Or download the PDF from drive.google.com and open it here.'];
-      }
-    }
     function gdriveSaveHint() {
       if (window.showSaveFilePicker) return 'Pick your Google Drive folder (Google Drive for desktop)';
       if (PLATFORM === 'ios') return 'Share sheet: Save to Files, then Google Drive';
       if (PLATFORM === 'android') return 'Share sheet: choose Drive';
       return 'Downloads the file; move it into your Google Drive folder';
     }
-    let ghMode = 'open';
-    function showDriveHelp(mode) {
-      ghMode = mode;
-      $('gh-title').textContent = mode === 'add' ? 'Add from Google Drive' : 'Open from Google Drive';
-      $('gh-steps').innerHTML = gdriveOpenSteps().map(t => `<li>${t}</li>`).join('');  // static text only
-      $('gh-skip').checked = false;
-      openModal('gdrive-help-modal');
-    }
-    $('gh-go').onclick = () => {
-      if ($('gh-skip').checked) store.set('observer-gdrive-help-skip', '1');
-      closeModal('gdrive-help-modal');
-      openFromFiles(ghMode);   // straight from the tap, so the system picker is allowed to open
-    };
-    // Without an OAuth client ID Drive still works, but through the device's own
-    // Drive app rather than Observer's sign-in. Say so instead of hiding it.
+    // With no Client ID, say plainly that Drive needs sign-in rather than
+    // quietly behaving like the local file picker.
     if (!driveConfigured) {
-      const viaDevice = PLATFORM === 'ios' || PLATFORM === 'android'
-        ? 'Through the Google Drive app, no sign-in needed' : 'Through Google Drive for desktop, no sign-in needed';
-      $('open-gdrive-hint').textContent = viaDevice;
-      $('home-gdrive-hint').textContent = viaDevice;
-      $('settings-google').textContent = 'How it works';
+      const needsSetup = 'Needs Google sign-in — not set up yet';
+      $('open-gdrive-hint').textContent = needsSetup;
+      $('home-gdrive-hint').textContent = needsSetup;
+      $('settings-google').textContent = 'Set up';
     }
 
     // ---------- Document lifecycle ----------
@@ -4308,7 +4583,7 @@
       $('home-gdrive').style.display = on ? 'none' : '';
       $('settings-google').disabled = on;
       $('settings-google').textContent = on ? 'Disabled'
-        : !driveConfigured ? 'How it works'
+        : !driveConfigured ? 'Set up'
         : (signedIn() ? 'Manage' : 'Connect');
       $('set-timestamp').disabled = on;
       $('add-timestamp').disabled = on;
@@ -4318,7 +4593,7 @@
         $('add-timestamp').checked = false;
       }
       $('gdrive-state').textContent = on ? 'Turned off by "Fully local only"'
-        : !driveConfigured ? 'Available through your device\'s Google Drive app'
+        : !driveConfigured ? 'Not set up — needs a Google Client ID'
         : signedIn() ? 'Connected' : 'Not connected';
     }
 
